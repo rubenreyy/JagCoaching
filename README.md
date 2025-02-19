@@ -4,12 +4,12 @@ Project by Ruben Reyes, Chris Nastasi, Angelo Badiola, Mel Nunez, Brandon Martin
 This project is designed to be an AI-powered analysis tool that will help coach a presentation. 
 After uploading, students will receive feedback on their presentation to help hone skills.
 
-#Technologies Used: 
+# Technologies Used: 
 
-#Front End
-
-
-#Back End
+# Front End
 
 
-#AI
+# Back End
+
+
+# AI
