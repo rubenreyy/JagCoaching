@@ -1,11 +1,26 @@
 import React, { useState } from 'react'
 
 const Select = ({ value, onChange, children, className = "", ...props }) => {
+  const [isOpen, setIsOpen] = useState(false)
+
   return (
     <div className={`relative ${className}`} {...props}>
       {React.Children.map(children, child => {
-        if (child.type === SelectTrigger || child.type === SelectContent) {
-          return React.cloneElement(child, { value, onChange })
+        if (child.type === SelectTrigger) {
+          return React.cloneElement(child, { 
+            value, 
+            onClick: () => setIsOpen(!isOpen),
+            isOpen 
+          })
+        }
+        if (child.type === SelectContent) {
+          return isOpen && React.cloneElement(child, { 
+            value, 
+            onChange: (newValue) => {
+              onChange(newValue)
+              setIsOpen(false)
+            }
+          })
         }
         return child
       })}
@@ -13,29 +28,20 @@ const Select = ({ value, onChange, children, className = "", ...props }) => {
   )
 }
 
-const SelectTrigger = ({ value, onChange, children, className = "", ...props }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  
+const SelectTrigger = ({ value, onClick, isOpen, children, className = "", ...props }) => {
   return (
-    <>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-        {...props}
-      >
-        {children}
-        <span className="ml-2">▼</span>
-      </button>
-      {isOpen && (
-        <SelectContent value={value} onChange={onChange} setIsOpen={setIsOpen}>
-          {React.Children.toArray(children).find(child => child.type === SelectContent)?.props.children}
-        </SelectContent>
-      )}
-    </>
+    <button 
+      onClick={onClick}
+      className={`flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      {...props}
+    >
+      {children}
+      <span className={`ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+    </button>
   )
 }
 
-const SelectContent = ({ children, value, onChange, setIsOpen, className = "" }) => {
+const SelectContent = ({ children, value, onChange, className = "" }) => {
   return (
     <div 
       className={`absolute z-50 w-full mt-1 overflow-hidden rounded-md border bg-white text-black shadow-md animate-in fade-in-80 ${className}`}
@@ -43,10 +49,7 @@ const SelectContent = ({ children, value, onChange, setIsOpen, className = "" })
       <div className="p-1">
         {React.Children.map(children, child => 
           React.cloneElement(child, { 
-            onClick: () => {
-              onChange(child.props.value)
-              setIsOpen(false)
-            },
+            onClick: () => onChange(child.props.value),
             active: child.props.value === value
           })
         )}
