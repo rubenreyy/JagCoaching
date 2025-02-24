@@ -6,7 +6,10 @@ const Dashboard = ({ setCurrentPage }) => {
         <h2 className="text-[#1E1E1E] text-3xl font-bold font-mono mb-4">
           Upload Presentation
         </h2>
-        <button className="w-full bg-[#030303] text-white rounded-2xl py-4 font-mono font-semibold text-3xl hover:bg-primary transition-colors flex items-center justify-center gap-3">
+        <button 
+          onClick={() => setCurrentPage('upload')}
+          className="w-full bg-[#030303] text-white rounded-2xl py-4 font-mono font-semibold text-3xl hover:bg-primary transition-colors flex items-center justify-center gap-3"
+        >
           <img 
             src="../src/assets/AiOutlineToTop.png" 
             alt="Upload" 
@@ -44,7 +47,10 @@ const Dashboard = ({ setCurrentPage }) => {
             </div>
           </div>
         </div>
-        <button className="mt-6 w-full border-2 border-[#EEEEEE] text-[#030303] rounded-2xl py-3 font-mono font-semibold hover:bg-primary hover:text-white hover:border-primary transition-colors">
+        <button 
+          onClick={() => setCurrentPage('feedback')}
+          className="mt-6 w-full border-2 border-[#EEEEEE] text-[#030303] rounded-2xl py-3 font-mono font-semibold hover:bg-primary hover:text-white hover:border-primary transition-colors"
+        >
           View Full Feedback
         </button>
       </section>
@@ -106,7 +112,10 @@ const Dashboard = ({ setCurrentPage }) => {
             className="w-48 h-48 text-primary" 
           />
         </div>
-        <button className="w-full border-2 border-[#EEEEEE] text-[#030303] rounded-2xl py-3 font-mono font-semibold hover:bg-primary hover:text-white hover:border-primary transition-colors">
+        <button 
+          onClick={() => setCurrentPage('progress')}
+          className="w-full border-2 border-[#EEEEEE] text-[#030303] rounded-2xl py-3 font-mono font-semibold hover:bg-primary hover:text-white hover:border-primary transition-colors"
+        >
           View Detailed Progress
         </button>
       </section>

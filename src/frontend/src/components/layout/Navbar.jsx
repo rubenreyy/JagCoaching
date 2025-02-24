@@ -19,14 +19,14 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
           {/* Navigation Links - Desktop */}
           <div className="hidden md:flex gap-8">
             <button 
-              onClick={() => setCurrentPage('dashboard')}
+              onClick={() => setCurrentPage('upload')}
               className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
-                ${currentPage === 'dashboard' ? 'text-primary' : ''}`}
+                ${currentPage === 'upload' ? 'text-primary' : ''}`}
             >
               Upload
             </button>
             <button 
-              onClick={() => setCurrentPage('dashboard')}
+              onClick={() => setCurrentPage('feedback')}
               className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
                 ${currentPage === 'feedback' ? 'text-primary' : ''}`}
             >
@@ -77,7 +77,7 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
             </button>
             <button 
               onClick={() => {
-                setCurrentPage('dashboard')
+                setCurrentPage('feedback')
                 setIsMenuOpen(false)
               }}
               className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
