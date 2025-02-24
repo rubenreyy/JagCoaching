@@ -1,4 +1,4 @@
-const Dashboard = () => {
+const Dashboard = ({ setCurrentPage }) => {
   return (
     <div className="max-w-[1280px] mx-auto py-20 flex flex-col gap-7">
       {/* Upload Section */}
@@ -86,7 +86,10 @@ const Dashboard = () => {
             <p className="text-black text-xl font-mono">Research Symposium - April 15, 2025</p>
           </div>
         </div>
-        <button className="mt-6 w-full border-2 border-[#EEEEEE] text-[#030303] rounded-2xl py-3 font-mono font-semibold hover:bg-primary hover:text-white hover:border-primary transition-colors">
+        <button 
+          onClick={() => setCurrentPage('schedule')}
+          className="mt-6 w-full border-2 border-[#EEEEEE] text-[#030303] rounded-2xl py-3 font-mono font-semibold hover:bg-primary hover:text-white hover:border-primary transition-colors"
+        >
           Add Presentation
         </button>
       </section>

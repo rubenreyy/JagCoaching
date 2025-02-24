@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 
-const Navbar = () => {
+const Navbar = ({ currentPage, setCurrentPage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
@@ -9,30 +9,36 @@ const Navbar = () => {
       <div className="max-w-[1280px] h-full mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-8">
-          <h1 className="text-white text-3xl font-bold font-mono">
+          <button 
+            onClick={() => setCurrentPage('dashboard')}
+            className="text-white text-3xl font-bold font-mono hover:text-primary transition-colors"
+          >
             JagCoach
-          </h1>
+          </button>
           
           {/* Navigation Links - Desktop */}
           <div className="hidden md:flex gap-8">
-            <a 
-              href="/upload" 
-              className="text-white text-xl font-mono font-light hover:text-primary transition-colors"
+            <button 
+              onClick={() => setCurrentPage('dashboard')}
+              className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+                ${currentPage === 'dashboard' ? 'text-primary' : ''}`}
             >
               Upload
-            </a>
-            <a 
-              href="/feedback" 
-              className="text-white text-xl font-mono font-light hover:text-primary transition-colors"
+            </button>
+            <button 
+              onClick={() => setCurrentPage('dashboard')}
+              className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+                ${currentPage === 'feedback' ? 'text-primary' : ''}`}
             >
               Feedback
-            </a>
-            <a 
-              href="/schedule" 
-              className="text-white text-xl font-mono font-light hover:text-primary transition-colors"
+            </button>
+            <button 
+              onClick={() => setCurrentPage('schedule')}
+              className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+                ${currentPage === 'schedule' ? 'text-primary' : ''}`}
             >
               Schedule
-            </a>
+            </button>
           </div>
         </div>
 
@@ -59,24 +65,36 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="absolute top-[79px] left-0 w-full bg-[#030303] py-4 px-4 md:hidden">
           <div className="flex flex-col gap-4">
-            <a 
-              href="/upload" 
-              className="text-white text-xl font-mono font-light hover:text-primary transition-colors"
+            <button 
+              onClick={() => {
+                setCurrentPage('dashboard')
+                setIsMenuOpen(false)
+              }}
+              className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+                ${currentPage === 'dashboard' ? 'text-primary' : ''}`}
             >
               Upload
-            </a>
-            <a 
-              href="/feedback" 
-              className="text-white text-xl font-mono font-light hover:text-primary transition-colors"
+            </button>
+            <button 
+              onClick={() => {
+                setCurrentPage('dashboard')
+                setIsMenuOpen(false)
+              }}
+              className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+                ${currentPage === 'feedback' ? 'text-primary' : ''}`}
             >
               Feedback
-            </a>
-            <a 
-              href="/schedule" 
-              className="text-white text-xl font-mono font-light hover:text-primary transition-colors"
+            </button>
+            <button 
+              onClick={() => {
+                setCurrentPage('schedule')
+                setIsMenuOpen(false)
+              }}
+              className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+                ${currentPage === 'schedule' ? 'text-primary' : ''}`}
             >
               Schedule
-            </a>
+            </button>
             <div className="flex flex-col gap-3 pt-4">
               <button className="bg-white rounded-[22.5px] py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors">
                 Login
