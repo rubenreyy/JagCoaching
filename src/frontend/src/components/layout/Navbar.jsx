@@ -1,8 +1,13 @@
 import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, User } from 'lucide-react'
 
-const Navbar = ({ currentPage, setCurrentPage }) => {
+const Navbar = ({ currentPage, setCurrentPage, isLoggedIn, setIsLoggedIn }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    setCurrentPage('login')
+  }
 
   return (
     <nav className="w-full h-[79px] bg-[#030303] px-4 relative">
@@ -44,12 +49,30 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
 
         {/* Auth Buttons - Desktop */}
         <div className="hidden md:flex gap-3">
-          <button className="bg-white rounded-[22.5px] px-8 py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors">
-            Login
-          </button>
-          <button className="bg-white rounded-[22.5px] px-8 py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors">
-            Sign Up
-          </button>
+          {isLoggedIn ? (
+            <button 
+              onClick={() => setCurrentPage('account')}
+              className="flex items-center gap-2 bg-white rounded-[22.5px] px-6 py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors"
+            >
+              <User size={20} />
+              <span>Account</span>
+            </button>
+          ) : (
+            <>
+              <button 
+                onClick={() => setCurrentPage('login')}
+                className="bg-white rounded-[22.5px] px-8 py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors"
+              >
+                Login
+              </button>
+              <button 
+                onClick={() => setCurrentPage('signup')}
+                className="bg-white rounded-[22.5px] px-8 py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors"
+              >
+                Sign Up
+              </button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -67,11 +90,11 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
           <div className="flex flex-col gap-4">
             <button 
               onClick={() => {
-                setCurrentPage('dashboard')
+                setCurrentPage('upload')
                 setIsMenuOpen(false)
               }}
               className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
-                ${currentPage === 'dashboard' ? 'text-primary' : ''}`}
+                ${currentPage === 'upload' ? 'text-primary' : ''}`}
             >
               Upload
             </button>
@@ -96,12 +119,39 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
               Schedule
             </button>
             <div className="flex flex-col gap-3 pt-4">
-              <button className="bg-white rounded-[22.5px] py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors">
-                Login
-              </button>
-              <button className="bg-white rounded-[22.5px] py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors">
-                Sign Up
-              </button>
+              {isLoggedIn ? (
+                <button 
+                  onClick={() => {
+                    setCurrentPage('account')
+                    setIsMenuOpen(false)
+                  }}
+                  className="flex items-center justify-center gap-2 bg-white rounded-[22.5px] py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors"
+                >
+                  <User size={20} />
+                  <span>Account</span>
+                </button>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => {
+                      setCurrentPage('login')
+                      setIsMenuOpen(false)
+                    }}
+                    className="bg-white rounded-[22.5px] py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors"
+                  >
+                    Login
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setCurrentPage('signup')
+                      setIsMenuOpen(false)
+                    }}
+                    className="bg-white rounded-[22.5px] py-2 font-mono font-semibold text-base text-[#030303] hover:bg-primary hover:text-white transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
