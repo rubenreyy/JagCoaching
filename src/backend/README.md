@@ -94,9 +94,8 @@ docker run -p 8000:8000 jagcoaching-backend
 - **Improved AI Models** for deeper presentation insights.
 
 ## Contributors
-- Backend Developer: **[Your Name]**
-- AI Research: **[Your Team Member]**
-- Full Stack Support: **[Other Contributors]**
+- Backend Developer: **[Angelo Badiola and Brandon Martinez]**
+- AI Research: **[Angelo Badiola and Brandon Martinez]**
 
 ## License
 MIT License
