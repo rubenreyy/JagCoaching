@@ -1,9 +1,12 @@
+# Revised on March 15 to trigger AI analysis when the video is uploaded
+
 from fastapi import FastAPI, UploadFile, File
 import shutil
 from pathlib import Path
 from .config import settings
-from .utils import extract_audio, transcribe_audio
+from .utils import extract_audio
 from .models import UploadResponse, SpeechEvaluationRequest, SpeechEvaluationResponse
+from scripts.SpeechAnalysisObject import SpeechAnalysisObject
 from transformers import pipeline
 import whisper
 
@@ -26,11 +29,24 @@ async def upload_video(file: UploadFile = File(...)):
 
 @app.post("/process-audio/")
 def process_audio(file_name: str):
-    """Extracts and processes audio from a video file."""
+    """Extracts and analyzes speech from uploaded video"""
     video_path = UPLOAD_DIR / file_name
     audio_path = extract_audio(video_path)
-    transcript = transcribe_audio(audio_path)
-    return {"transcript": transcript, "audio_path": str(audio_path)}
+
+    # Run AI analysis
+    analysis = SpeechAnalysisObject(audio_path)
+    feedback = analysis.generate_feedback()
+    
+    return {
+        "transcript": analysis.transcript,
+        "sentiment": analysis.sentiment,
+        "filler_words": analysis.filler_words,
+        "emotion": analysis.emotion,
+        "keywords": analysis.keywords,
+        "pauses": analysis.pauses,
+        "wpm": analysis.wpm,
+        "clarity": analysis.clarity,
+    }
 
 @app.post("/evaluate-speech/", response_model=SpeechEvaluationResponse)
 def evaluate_speech(request: SpeechEvaluationRequest):
