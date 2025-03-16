@@ -1,4 +1,4 @@
-import speech_analysis
+from . import speech_analysis
 import json
 import uuid
 from datetime import datetime
