@@ -16,7 +16,7 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
         formData.append("file", file);
 
         try {
-            const uploadResponse = await fetch("http://localhost:8000/upload/", {
+            const uploadResponse = await fetch("http://localhost:8000/api/upload/", {
                 method: "POST",
                 body: formData,
             });
@@ -35,7 +35,7 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
     const processAudio = async (fileName) => {
         setIsProcessing(true);
         try {
-            const response = await fetch("http://localhost:8000/process-audio/", {
+            const response = await fetch("http://localhost:8000/api/process-audio/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ file_name: fileName }),

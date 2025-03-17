@@ -1,8 +1,8 @@
 from pydub import AudioSegment
-import whisper
+from scripts import speech_analysis
 from pathlib import Path
 
-whisper_model = whisper.load_model("base")
+# removed whisper import
 
 def extract_audio(video_path: Path) -> Path:
     """Extracts audio from video and saves it as a WAV file."""
@@ -12,5 +12,5 @@ def extract_audio(video_path: Path) -> Path:
 
 def transcribe_audio(audio_path: Path) -> str:
     """Transcribes audio to text using Whisper."""
-    result = whisper_model.transcribe(str(audio_path))
+    result = speech_analysis.transcribe_speech(str(audio_path)) # replaced with project script
     return result["text"]

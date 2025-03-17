@@ -11,23 +11,32 @@ if __name__ == "__main__":
     # for path in sys.path: 
     #     print(path)
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File , Depends
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
 from pathlib import Path
 from config import settings
 from utils import extract_audio
 from models import UploadResponse, SpeechEvaluationRequest, SpeechEvaluationResponse
 from scripts import speech_analysis , SpeechAnalysisObject
-from transformers import pipeline
-import whisper
 
 app = FastAPI()
 UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# Load models
-whisper_model = whisper.load_model("base")
-llm_pipeline = pipeline("text-generation", model=settings.LLM_MODEL)
+
+# Added CORS middleware to allow cross-origin requests from the frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_HOSTS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def index():
+    return {"message": "Welcome to the JagCoaching API!"}
 
 
 @app.get("/api/")
@@ -59,7 +68,30 @@ async def index():
         "version": "1.0"
     }
 
-@app.post("/upload/", response_model=UploadResponse)
+
+# Login endpoint
+@app.post("/api/login/")
+def login(username: str, password: str, ):
+    print(username,password)
+    return {"status": "success", "message": "Login successful!"}
+
+# Signup endpoint
+@app.post("/api/register/")
+def register(username: str, email: str, password: str):
+    print(username, email, password)
+    return {"status": "success", "message": "Registration successful!"}
+
+
+# Check if the user is logged in
+@app.get("/api/user/")
+def get_user(username: str = Depends()):
+    if not username:
+        return {"status": "error", "message": "User not found!"}
+    
+    return {"status": "success", "message": "User found!"}
+
+# Changed the endpoint to /api/upload/ to match the frontend
+@app.post("/api/upload/", response_model=UploadResponse)
 async def upload_video(file: UploadFile = File(...)):
     """Handles video upload and saves it to the server."""
     file_path = UPLOAD_DIR / file.filename
@@ -67,7 +99,30 @@ async def upload_video(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
     return {"filename": file.filename, "status": "uploaded"}
 
-@app.post("/process-audio/")
+# Changed the endpoint to /api/process-audio/ to match the frontend
+@app.post("/api/process-audio/")
+def process_audio(file_name: str):
+    """Extracts and analyzes speech from uploaded video"""
+    video_path = UPLOAD_DIR / file_name
+    audio_path = extract_audio(video_path)
+
+    # Run AI analysis
+    analysis = SpeechAnalysisObject(audio_path)
+    feedback = analysis.generate_feedback()
+
+    return {
+        "transcript": analysis.transcript,
+        "sentiment": analysis.sentiment,
+        "filler_words": analysis.filler_words,
+        "emotion": analysis.emotion,
+        "keywords": analysis.keywords,
+        "pauses": analysis.pauses,
+        "wpm": analysis.wpm,
+        "clarity": analysis.clarity,
+    }
+
+
+@app.post("/api/process-audio/")
 def process_audio(file_name: str):
     """Extracts and analyzes speech from uploaded video"""
     video_path = UPLOAD_DIR / file_name
@@ -90,17 +145,7 @@ def process_audio(file_name: str):
 
 @app.post("/evaluate-speech/", response_model=SpeechEvaluationResponse)
 def evaluate_speech(request: SpeechEvaluationRequest):
-    """Uses LLM to evaluate speech transcript."""
-    prompt = f"""
-    Evaluate the following speech based on clarity, coherence, engagement, and persuasiveness.
-    Provide constructive feedback.
-
-    Speech Transcript:
-    {request.transcript}
-    """
-    response = llm_pipeline(prompt, max_length=300)
-    feedback = response[0]['generated_text']
-    return {"feedback": feedback}
+    return None
 
 if __name__ == "__main__":
     import uvicorn
