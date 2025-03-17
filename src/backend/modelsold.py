@@ -12,9 +12,15 @@ class SpeechEvaluationResponse(BaseModel):
 
 class User(BaseModel):
     username: str
-    email: str
+    email: str = None
     full_name: str = None
     disabled: bool = None
+    password: str = None
+
+
+class FileName(BaseModel):
+    file_name: str
+
 
 class UserInDB(User):
     hashed_password: str
@@ -26,3 +32,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str = None
 
+class UploadFile(BaseModel):
+    filename: str
+    content_type: str
+    file_path: str

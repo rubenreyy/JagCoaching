@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 
+
 const Upload = ({ setCurrentPage, setFeedback }) => {
     const [files, setFiles] = useState([]);
     const [uploadProgress, setUploadProgress] = useState({});
@@ -25,6 +26,7 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
             console.log("Uploaded File:", uploadData);
             
             if (uploadData.filename) {
+                console.log(uploadData.filename)
                 processAudio(uploadData.filename);
             }
         } catch (error) {
@@ -35,16 +37,24 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
     const processAudio = async (fileName) => {
         setIsProcessing(true);
         try {
+            console.log(JSON.stringify({ file_name: fileName }))
+            console.log(fileName)
             const response = await fetch("http://localhost:8000/api/process-audio/", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ file_name: fileName }),
+                headers: { "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "Access-Control-Allow-Origin": "http://localhost:3000",
+                            "Access-Control-Allow-Headers": "*",
+
+                },
+
             });
             
             const data = await response.json();
             console.log("AI Feedback:", data);
             
-            setFeedback(data);  // Pass feedback to state for frontend display
+            // setFeedback=data;
             setCurrentPage("feedback"); // Navigate to feedback page
         } catch (error) {
             console.error("Processing failed:", error);
@@ -64,5 +74,6 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
         </div>
     );
 };
+
 
 export default Upload;

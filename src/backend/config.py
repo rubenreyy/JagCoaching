@@ -9,9 +9,9 @@ load_dotenv()
 
 class Settings(BaseSettings):
     HUGGINGFACE_API_KEY: str = os.getenv("HUGGINGFACE_API_KEY")
-    # LLM_MODEL: str = os.getenv("LLM_MODEL", "mistralai/Mistral-7B-v0.1")  # Default model
-    # LLM_MODEL: str = os.getenv("LLM_MODEL", "openai-community/gpt2")  # Default model
     UPLOAD_FOLDER: str = os.getenv("UPLOAD_FOLDER", "uploads")
-    ALLOWED_HOSTS: list = ["https://localhost:3000", "http://localhost:8000"]
+    ALLOWED_HOSTS: list = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_HEADERS: list = ["*"]
+    ALLOWED_METHODS: list = ["*"]
 
 settings = Settings()

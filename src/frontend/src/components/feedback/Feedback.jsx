@@ -1,6 +1,7 @@
 // Revised on March 15 to show AI-generated insights
 
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const Feedback = ({ feedback }) => {
     if (!feedback) {
@@ -18,6 +19,10 @@ const Feedback = ({ feedback }) => {
             <p><strong>Key Topics:</strong> {feedback.keywords.join(", ")}</p>
         </div>
     );
+};
+
+Feedback.propTypes = {
+    feedback: PropTypes.object
 };
 
 export default Feedback;

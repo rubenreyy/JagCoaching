@@ -10,7 +10,7 @@ from datetime import datetime
 class SpeechAnalysisObject:
     """_summary_: Speech Analysis that takes in an audio file and returns a structured feedback report
     """
-    def __init__(self, audio_path, user_id=None):
+    def __init__(self, audio_path:str, user_id=None):
         # Core Properties
         self.audio_path = audio_path
         self.user_id = user_id if user_id else str(uuid.uuid4())
