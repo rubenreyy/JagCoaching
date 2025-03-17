@@ -9,8 +9,45 @@ const Login = ({ setCurrentPage, setIsLoggedIn }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     // TODO: Implement actual login logic
-    setIsLoggedIn(true)
-    setCurrentPage('dashboard')
+    
+    // Call the login API endpoint
+    console.log('Attempting to login with:', formData.email);
+
+    // Use fetch to call the backend API
+    fetch('http://localhost:8000/api/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: formData.email,
+        password: formData.password,
+      }),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Login successful:', data);
+      // Set login state and redirect only if login was successful
+      setIsLoggedIn(true);
+      setCurrentPage('dashboard');
+    })
+    .catch(error => {
+      console.error('Login error:', error);
+      alert('Login failed. Please check your credentials and try again.');
+      // Don't set login state or redirect on failure
+      setIsLoggedIn(false);
+    });
+
+    // Prevent the default form submission which was doing unconditional login
+    // return;
+
+    // setIsLoggedIn(true)
+    // setCurrentPage('dashboard')
   }
 
   return (
