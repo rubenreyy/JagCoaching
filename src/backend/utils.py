@@ -13,8 +13,9 @@ async def extract_audio(video_path: Path) -> Path:
 
     # Update audio_path to use the output directory
     audio_path = output_dir / video_path.with_suffix(".wav").name
-    AudioSegment.from_file(video_path).export(audio_path, format="wav")
-    return audio_path
+    audio = AudioSegment.from_file(video_path).export(audio_path, format="wav")
+    print(audio)
+    return audio.name
 
 def transcribe_audio(audio_path: Path) -> str:
     """Transcribes audio to text using Whisper."""

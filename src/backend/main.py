@@ -6,20 +6,20 @@
 if __name__ == "__main__":
     import os
     import sys
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath("JagCoaching/scripts"))))
-    # -- Uncomment to print the Python paths --
-    # for path in sys.path: 
-    #     print(path)
+    sys.path.append(os.path.dirname(os.path.dirname(
+        os.path.abspath("JagCoaching/scripts"))))
+
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File , Depends , APIRouter , Request
+from fastapi import FastAPI, UploadFile, File, Depends, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
+import uvicorn
 # from routers import users_router, auth_router , videos_router
 from pathlib import Path
 from config import settings
 from utils import extract_audio
 from modelsold import FileName, UploadResponse, SpeechEvaluationRequest, SpeechEvaluationResponse, User
-from scripts import speech_analysis , SpeechAnalysisObject
+from scripts import speech_analysis, SpeechAnalysisObject
 import uuid
 
 UPLOAD_DIR = None
@@ -60,6 +60,7 @@ app.add_middleware(
     allow_headers=settings.ALLOWED_HEADERS,
 )
 
+
 @app.get("/")
 async def index():
     return {"message": "Welcome to the JagCoaching API!"}
@@ -94,10 +95,12 @@ async def index():
 @app.post("/api/login/")
 def login(form: User):
     print(form)
-    
+
     return {"status": "success", "message": "Login successful!"}
 
 # Signup endpoint
+
+
 @app.post("/api/register/")
 # def register(username: str, email: str, password: str):
 def register(form: User):
@@ -117,10 +120,12 @@ def get_user_info(username: str = Depends(login)):
         return {"status": "success", "message": "User found!"}
 
 # Get profile data for the logged in user
+
+
 @app.get("/api/profile/")
 def get_profile():
     """Returns the profile data for the currently logged in user."""
-    
+
     return {
         "status": "success",
         "user": {
@@ -133,6 +138,8 @@ def get_profile():
     }
 
 # Changed the endpoint to /api/upload/ to match the frontend
+
+
 @app.post("/api/upload/", response_model=UploadResponse)
 async def upload_video(file: UploadFile = File(...)):
     """Handles video upload and saves it to the server."""
@@ -147,22 +154,27 @@ async def upload_video(file: UploadFile = File(...)):
     return {"filename": file.filename, "status": "uploaded"}
 
 # Changed the endpoint to /api/process-audio/ to match the frontend
+
+
 @app.post("/api/process-audio/")
 async def process_audio(file_name: FileName):
     """Extracts and analyzes speech from uploaded video"""
     global UPLOAD_DIR
     print(file_name)
-    
+
     video_path = UPLOAD_DIR / file_name.file_name
     audio_path = await extract_audio(video_path)
-
+    
     # Run AI analysis
-    analysis = await SpeechAnalysisObject.SpeechAnalysisObject(audio_path)
+    analysis = SpeechAnalysisObject.SpeechAnalysisObject(audio_path)
     
+
     # Generate feedback
-    feedback = analysis.generate_feedback()
+    # feedback = analysis.generate_feedback()
     
-    return {
+   
+    # Format the feedback as a JSON-serializable dictionary
+    feedback_data = {
         "transcript": analysis.transcript,
         "sentiment": analysis.sentiment,
         "filler_words": analysis.filler_words,
@@ -172,8 +184,10 @@ async def process_audio(file_name: FileName):
         "wpm": analysis.wpm,
         "clarity": analysis.clarity,
     }
+    
+    # FastAPI will automatically convert this to JSON
+    return {"feedback": feedback_data}
 
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", port=8000, reload=True)
+    uvicorn.run("main:app", port=8000,reload=True)

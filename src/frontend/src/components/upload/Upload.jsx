@@ -2,6 +2,9 @@
 // Also to to send the file name to /process-audio/
 
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import Feedback from '../feedback/Feedback';
+import {feedback} from '../feedback/Feedback';
 
 
 const Upload = ({ setCurrentPage, setFeedback }) => {
@@ -54,8 +57,11 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
             const data = await response.json();
             console.log("AI Feedback:", data);
             
-            // setFeedback=data;
+            
+            Feedback({ feedback: data.feedback });
+            feedback(data.feedback);
             setCurrentPage("feedback"); // Navigate to feedback page
+            
         } catch (error) {
             console.error("Processing failed:", error);
         }
@@ -75,5 +81,9 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
     );
 };
 
+// Upload.propTypes = {
+//     setCurrentPage: PropTypes.func.isRequired,
+//     setFeedback: PropTypes.func.isRequired
+// };
 
 export default Upload;
