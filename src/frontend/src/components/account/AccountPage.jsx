@@ -10,6 +10,44 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
     newPassword: "",
     confirmPassword: ""
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Fetch user profile data when component mounts
+  useState(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('http://localhost:8000/api/profile/', {
+          method: 'GET',
+          credentials: 'include', // Include cookies for authentication
+        })
+        
+        if (!response.ok) {
+          throw new Error('Not authenticated or server error')
+        }
+        
+        const data = await response.json()
+        if (data.status === 'success') {
+          setFormData({
+            ...formData,
+            name: data.user.name || "User",
+            email: data.user.email || ""
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+        setError('Could not load profile data')
+        // Redirect to login if not authenticated
+        setIsLoggedIn(false)
+        setCurrentPage('login')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchProfile()
+  }, [])
 
   const handleLogout = () => {
     setIsLoggedIn(false)
@@ -27,40 +65,46 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
         {/* Profile Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold font-mono mb-6">User Profile</h2>
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-[#030303] rounded-full flex items-center justify-center">
-              <User size={40} className="text-white" />
+          {isLoading ? (
+            <p className="text-center py-4">Loading profile data...</p>
+          ) : error ? (
+            <p className="text-center py-4 text-red-500">{error}</p>
+          ) : (
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 bg-[#030303] rounded-full flex items-center justify-center">
+                <User size={40} className="text-white" />
+              </div>
+              <div className="flex-1">
+                {isEditingProfile ? (
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md font-mono"
+                    />
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md font-mono"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-xl font-mono">{formData.name}</h3>
+                    <p className="text-gray-600 font-mono">{formData.email}</p>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setIsEditingProfile(!isEditingProfile)}
+                className="bg-[#CCCCCC] hover:bg-primary text-[#030303] hover:text-white px-6 py-2 rounded-[22.5px] font-mono font-semibold transition-colors"
+              >
+                {isEditingProfile ? "Save" : "Edit Profile"}
+              </button>
             </div>
-            <div className="flex-1">
-              {isEditingProfile ? (
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md font-mono"
-                  />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md font-mono"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <h3 className="text-xl font-mono">{formData.name}</h3>
-                  <p className="text-gray-600 font-mono">{formData.email}</p>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => setIsEditingProfile(!isEditingProfile)}
-              className="bg-[#CCCCCC] hover:bg-primary text-[#030303] hover:text-white px-6 py-2 rounded-[22.5px] font-mono font-semibold transition-colors"
-            >
-              {isEditingProfile ? "Save" : "Edit Profile"}
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Password Section */}
