@@ -1,7 +1,7 @@
 from pydub import AudioSegment
 from scripts import speech_analysis
-from scripts.tests import convert_to_wav
 from pathlib import Path
+
 
 # removed whisper import
 

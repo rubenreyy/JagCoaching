@@ -1,9 +1,12 @@
-from .user import UserBase, UserCreate, UserInDB, User, UserUpdate
+from .schemas import UserBase, UserCreate, User, VideoBase, VideoCreate, Video, Feedback, FeedbackResponse
 
 __all__ = [
     'UserBase',
     'UserCreate',
-    'UserInDB', 
     'User',
-    'UserUpdate',
+    'VideoBase',
+    'VideoCreate',
+    'Video',
+    'Feedback',
+    'FeedbackResponse',
 ]
