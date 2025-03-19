@@ -5,8 +5,10 @@ from pathlib import Path
 import shutil
 import os
 import uuid
-from ..models.video import Video
-from ..dependencies import get_current_user
+from models.video import Video
+from dependencies import get_current_user
+from scripts import SpeechAnalysisObject
+from scripts import speech_analysis
 
 router = APIRouter(
     prefix="/api/upload",  # Changed from "/videos" to "/api/upload"
@@ -34,6 +36,7 @@ async def upload_video(
     file_extension = os.path.splitext(file.filename)[1]
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     file_path = UPLOAD_DIR / unique_filename
+    
     
     # Save uploaded file
     with open(file_path, "wb") as buffer:

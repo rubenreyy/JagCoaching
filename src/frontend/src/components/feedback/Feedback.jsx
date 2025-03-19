@@ -4,13 +4,16 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const Feedback = ({ feedback }) => {
-    if (!feedback) {
+    feedback = feedback || {};
+    console.log(`feedback: ${feedback.transcript}`)
+    if (!Object.keys(feedback).length) {
         return <p>No feedback available. Please upload and process a video.</p>;
     }
 
     return (
         <div className="feedback-container">
-            <h2>Speech Analysis Report</h2>
+            <br></br>
+            <h2 style={{ textAlign: "center" }}>Speech Analysis Report</h2>
             <p><strong>Transcript:</strong> {feedback.transcript}</p>
             <p><strong>Sentiment:</strong> {feedback.sentiment[0].label} ({feedback.sentiment[0].score.toFixed(2)})</p>
             <p><strong>Filler Words:</strong> {JSON.stringify(feedback.filler_words)}</p>

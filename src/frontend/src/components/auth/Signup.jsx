@@ -9,7 +9,7 @@ const Signup = ({ setCurrentPage }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // TODO: Implement signup logic
+    
     // First check if passwords match
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');

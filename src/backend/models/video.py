@@ -2,102 +2,98 @@ from datetime import datetime
 from pathlib import Path
 import uuid
 from typing import Optional, List, Dict, Any
-from ..utils import extract_audio
-from ..utils import transcribe_audio
+from pydantic import BaseModel, Field, validator
+from bson import ObjectId
+from utils import extract_audio, transcribe_audio
 
-class Video:
-    """
-    Data model representing a coaching video and its analysis results.
-    """
-    
-    def __init__(
-        self,
-        file_path: Path,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        user_id: Optional[str] = None
-    ):
-        self.id = str(uuid.uuid4())
-        self.file_path = Path(file_path)
-        self.title = title or self.file_path.stem
-        self.description = description or ""
-        self.tags = tags or []
-        self.user_id = user_id
-        self.upload_date = datetime.now()
-        self.duration_seconds = None
-        self.size_bytes = None
-        
-        # Analysis results
-        self.audio_path = None
-        self.transcription = None
-        self.speech_analysis = None
-        
-        # Extract metadata if file exists
-        if self.file_path.exists():
-            self._extract_metadata()
-    
-    def _extract_metadata(self) -> None:
-        """Extract basic metadata from the video file."""
-        self.size_bytes = self.file_path.stat().st_size
-        # Note: Duration would typically require a library like moviepy or ffprobe
-        # self.duration_seconds = get_video_duration(self.file_path)
-    
-    def extract_audio(self) -> Path:
-        """Extract audio from video file using utility function."""
-        self.audio_path = extract_audio(self.file_path)
-        return self.audio_path
-    
-    def transcribe(self) -> str:
-        """Transcribe audio to text."""
-        if not self.audio_path:
-            self.extract_audio()
-        self.transcription = transcribe_audio(self.audio_path)
-        return self.transcription
-    
-    def analyze(self) -> Dict[str, Any]:
-        """Perform full analysis on the video."""
-        if not self.transcription:
-            self.transcribe()
-        
-        # Placeholder for additional analysis
-        # This could include sentiment analysis, keyword extraction, etc.
-        self.speech_analysis = {
-            "transcription": self.transcription,
-            # Add other analysis results here
-        }
-        
-        return self.speech_analysis
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert video object to dictionary for serialization."""
-        return {
-            "id": self.id,
-            "file_path": str(self.file_path),
-            "title": self.title,
-            "description": self.description,
-            "tags": self.tags,
-            "user_id": self.user_id,
-            "upload_date": self.upload_date.isoformat(),
-            "duration_seconds": self.duration_seconds,
-            "size_bytes": self.size_bytes,
-            "transcription": self.transcription,
-            "speech_analysis": self.speech_analysis
-        }
-    
+
+# PyObjectId class for handling MongoDB ObjectId
+class PyObjectId(ObjectId):
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Video':
-        """Create a Video object from dictionary data."""
-        video = cls(file_path=data["file_path"])
-        video.id = data.get("id", video.id)
-        video.title = data.get("title", video.title)
-        video.description = data.get("description", video.description)
-        video.tags = data.get("tags", video.tags)
-        video.user_id = data.get("user_id", video.user_id)
-        if "upload_date" in data:
-            video.upload_date = datetime.fromisoformat(data["upload_date"])
-        video.duration_seconds = data.get("duration_seconds", video.duration_seconds)
-        video.size_bytes = data.get("size_bytes", video.size_bytes)
-        video.transcription = data.get("transcription", video.transcription)
-        video.speech_analysis = data.get("speech_analysis", video.speech_analysis)
-        return video
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return ObjectId(v)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, field_schema):
+        field_schema.update(type="string")
+
+# Base Video model
+class VideoBase(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    tags: Optional[List[str]] = []
+    user_id: Optional[str] = None
+
+# Model for creating a new video
+class VideoCreate(VideoBase):
+    file_path: str
+
+# Model for updating a video
+class VideoUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+# Model for a video stored in the database
+class VideoInDB(VideoBase):
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    file_path: str
+    upload_date: datetime = Field(default_factory=datetime.now)
+    duration_seconds: Optional[float] = None
+    size_bytes: Optional[int] = None
+    audio_path: Optional[str] = None
+    transcription: Optional[str] = None
+    speech_analysis: Optional[Dict[str, Any]] = None
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+        json_schema_extra = {
+            "example": {
+                "_id": "60d5ec2af682fbedea4216c8",
+                "title": "Coaching Session 1",
+                "description": "Initial coaching session",
+                "tags": ["interview", "feedback"],
+                "user_id": "60d5ec2af682fbedea4216c7",
+                "file_path": "/videos/session1.mp4",
+                "upload_date": "2023-04-01T10:30:00",
+                "duration_seconds": 300,
+                "size_bytes": 15000000,
+                "audio_path": "/audio/session1.wav",
+                "transcription": "Hello, welcome to the coaching session...",
+                "speech_analysis": {"key_points": ["confidence", "clarity"]}
+            }
+        }
+
+# Model for returning video data
+class Video(VideoBase):
+    id: str = Field(alias="_id")
+    file_path: str
+    upload_date: datetime
+    duration_seconds: Optional[float] = None
+    size_bytes: Optional[int] = None
+    audio_path: Optional[str] = None
+    transcription: Optional[str] = None
+    speech_analysis: Optional[Dict[str, Any]] = None
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+# Helper functions for video processing
+def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
+    """Extract basic metadata from the video file."""
+    metadata = {}
+    if Path(file_path).exists():
+        metadata["size_bytes"] = Path(file_path).stat().st_size
+        # Note: Duration would typically require a library like moviepy or ffprobe
+        # metadata["duration_seconds"] = get_video_duration(file_path)
+    return metadata

@@ -1,17 +1,27 @@
 // Revised on March 15 to Send Video to Backend
 // Also to to send the file name to /process-audio/
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Feedback from '../feedback/Feedback';
-import {feedback} from '../feedback/Feedback';
 
 
-const Upload = ({ setCurrentPage, setFeedback }) => {
+
+const Upload = ({ setCurrentPage }) => {
     const [files, setFiles] = useState([]);
     const [uploadProgress, setUploadProgress] = useState({});
     const [isProcessing, setIsProcessing] = useState(false);
-
+    const [feedbackData, setFeedbackData] = useState({});
+    const [feedback, setFeedback] = useState(null);
+    // useEffect(() => {
+    //     if (Object.keys(feedbackData).length > 0) {
+    //         // When feedback data is available, redirect to feedback page
+    //         console.log("Feedback data is available");
+    //         setFeedback(<Feedback feedback={feedbackData} />);
+    //         setCurrentPage("feedback",feedback);
+    //     }
+    // }, [feedbackData, setCurrentPage]);
+    
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -52,21 +62,30 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
 
                 },
 
-            });
+            }).then(response => {
+                return response.json();
+            })
             
-            const data = await response.json();
-            console.log("AI Feedback:", data);
-            
-            
-            Feedback({ feedback: data.feedback });
-            feedback(data.feedback);
-            setCurrentPage("feedback"); // Navigate to feedback page
+            const data = await response;
+            console.log("AI Feedback:", data.feedback);
+            setFeedbackData(data.feedback);
+            setFeedback(<Feedback feedback={data.feedback} />);
             
         } catch (error) {
             console.error("Processing failed:", error);
         }
-        setIsProcessing(false);
+        finally {
+            setIsProcessing(false);
+        }
     };
+
+    useEffect(() => {
+        if (Object.keys(feedbackData).length > 0) {
+            // When feedback data is available, redirect to feedback page
+            console.log("Feedback data is available");
+            setFeedback(<Feedback feedback={feedbackData} />);
+        }
+    }, [feedbackData]);
 
     return (
         <div className="upload-container">
@@ -76,14 +95,21 @@ const Upload = ({ setCurrentPage, setFeedback }) => {
                 onChange={handleFileChange}
                 accept=".mp4,.mov,.avi,.webm,.pdf,.ppt,.pptx"
             />
+            <br />
             {isProcessing && <p>Processing video... Please wait.</p>}
+            {Object.keys(feedbackData).length > 0 && (
+                <>
+                    <p>Video processed! Redirecting to feedback...</p>
+                    <Feedback feedback={feedbackData} />
+                </>
+            )}
         </div>
     );
 };
 
-// Upload.propTypes = {
-//     setCurrentPage: PropTypes.func.isRequired,
-//     setFeedback: PropTypes.func.isRequired
-// };
+Upload.propTypes = {
+    setCurrentPage: PropTypes.func.isRequired,
+    // setFeedback: PropTypes.func.isRequired
+};
 
 export default Upload;

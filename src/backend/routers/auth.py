@@ -1,97 +1,127 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from typing import Optional
-from ..database.database import get_db
-from ..models.user import User, UserCreate, UserInDB
-from ..services.user_service import get_user_by_email, create_user
-from ..core.security import verify_password, get_password_hash
-
-
-# TODO: Implement Database to make the auth work
-
-# Security configuration
-SECRET_KEY = "YOUR_SECRET_KEY_HERE"  # Should be loaded from environment variable
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
+from typing import Any
+from fastapi import APIRouter, Depends, Request
+from models import user
+from models.user import User, UserBase , UserInDB, UserLogin
+from dependencies.auth import get_current_user
+from database.cloud_db_controller import CloudDBController
+from datetime import datetime
 router = APIRouter(
-    prefix="/auth",
-    tags=["authentication"],
-    responses={401: {"description": "Unauthorized"}},
+    prefix="/api",
+    tags=["auth"],
+    responses={404: {"description": "Not found"},
+               401: {"description": "Unauthorized"},
+               403: {"description": "Forbidden"},
+               500: {"description": "Server Error"},
+               200: {"description": "Success"}}
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def authenticate_user(db: Session, email: str, password: str):
-    user = get_user_by_email(db, email)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
-
-
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+@router.post("/login/")
+async def login(request: Request):
+    # Logic for user login
+    user = await request.json()
+    
+    print(user)
+    
+    # Initialize the database controller
+    db_controller = CloudDBController()
+    
+    # Check if the user exists in the database
+    user_in_db = db_controller.find_document(
+        "JagCoaching", 
+        "users", 
+        {"email": user['username']}
     )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = get_user_by_email(db, email=email)
-    if user is None:
-        raise credentials_exception
-    return user
 
+    # If user doesn't exist, return error
+    if not user_in_db:
+        return {"status": "error", "message": "User not found"}
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-    return create_user(db=db, user=user)
+    # TODO: Verify password here (you'd need to hash passwords in your actual implementation)
+    # This is just a placeholder for basic functionality
+    print(user)
+    return {"status": "success", "message": "Login successful!"}
 
-
-@router.post("/token")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+@router.post("/register/")
+async def register(form: User):
+    # Logic for user registration
+    # Initialize the database controller
+    print(router.route())
+    db_controller = await CloudDBController()
+    
+    print(db_controller.get_database("JagCoaching"))
+    # Check if user already exists
+    existing_user = await db_controller.find_document(
+        "JagCoaching",
+        "users",
+        {"email": form.email}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # If user already exists, return error
+    if existing_user:
+        return {"status": "error", "message": "User with this email already exists"}
+
+    # Create new user document
+    user_document = {
+        "email": form.email,
+        "username": form.username,
+        "created_at": datetime.now(),
+        "last_login": None
+    }
+        # "password": form.password,  # TODO: Hash the password
+
+    # Add user to the database
+    result = db_controller.add_document("JagCoaching", "users", user_document)
+
+    # Check if user was successfully added
+    if not result.acknowledged:
+        return {"status": "error", "message": "Failed to create user"}
+    print(user)
+    return {"status": "success", "message": "Registration successful!"}
+    
+# Logout endpoint
+@router.post("/api/logout/")
+async def logout(current_user: User = Depends(get_current_user)):
+    print(current_user)
+    return {"status": "success", "message": "Logout successful!"}
 
 
-@router.get("/me", response_model=User)
-def read_users_me(current_user: User = Depends(get_current_user)):
-    return current_user
+@router.get("/me/")
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return {"status": "success", "user": current_user}
+
+
+
+# # Old Routes before routing to routers
+
+
+# # Login endpoint
+# @app.post("/api/login/")
+# def login(form: User):
+#     print(form)
+
+#     return {"status": "success", "message": "Login successful! test"}
+
+# # Logout endpoint
+# @app.post("/api/logout/")
+# def logout(form: User):
+#     print(form)
+#     return {"status": "success", "message": "Logout successful!"}
+
+# # Signup endpoint
+# @app.post("/api/register/")
+# # def register(username: str, email: str, password: str):
+# def register(form: User):
+#     username = form.username
+#     email = form.email
+#     password = form.password
+#     print(username, email, password)
+#     return {"status": "success", "message": "Registration successful!", "user": {"username": username, "email": email}}
+
+
+# # Check if the user is logged in
+# @app.get("/api/user/")
+# def get_user_info(username: str = Depends(login)):
+#     if not username:
+#         return {"status": "error", "message": "User not found!"}
+#     else:
+#         return {"status": "success", "message": "User found!", "username": username}

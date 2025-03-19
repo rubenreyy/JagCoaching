@@ -1,11 +1,13 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from models.user import User
 
 # Load environment variables
 load_dotenv()
@@ -23,21 +25,17 @@ class TokenData(BaseModel):
     user_id: Optional[str] = None
 
 
-class User(BaseModel):
-    id: str
-    username: str
-    email: Optional[str] = None
-    disabled: Optional[bool] = False
+
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create a new JWT access token"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -50,19 +48,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         user_id: str = payload.get("id")
-        
+
         if username is None or user_id is None:
             raise credentials_exception
-            
+
         token_data = TokenData(username=username, user_id=user_id)
     except JWTError:
         raise credentials_exception
-        
+
     # In a real application, you would fetch the user from your database here
     # This is just a placeholder implementation
     user = User(
@@ -70,13 +68,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         username=token_data.username,
         email=f"{token_data.username}@example.com"
     )
-    
+
     if user is None:
         raise credentials_exception
-    
+
     if user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
-        
+
     return user
 
 
@@ -85,3 +83,9 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def get_password_hash(password: str):
+    """Generate a password hash"""
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    return pwd_context.hash(password)
