@@ -2,10 +2,10 @@ from datetime import datetime
 from pathlib import Path
 import uuid
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from bson import ObjectId
-from utils import extract_audio, transcribe_audio
 
+# -- INFO: Models for video data and processing -- #
 
 # PyObjectId class for handling MongoDB ObjectId
 class PyObjectId(ObjectId):
@@ -39,7 +39,9 @@ class VideoUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None
+    
 
+    
 # Model for a video stored in the database
 class VideoInDB(VideoBase):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")

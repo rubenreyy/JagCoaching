@@ -1,9 +1,11 @@
-from pydub import AudioSegment
-from scripts import speech_analysis
 from pathlib import Path
 
+from pydub import AudioSegment
 
-# removed whisper import
+from scripts import speech_analysis
+
+
+# TODO: extract audio and save into db for reference. assign it to new document and attach user id 
 
 async def extract_audio(video_path: Path) -> Path:
     """Extracts audio from video and saves it as a WAV file."""

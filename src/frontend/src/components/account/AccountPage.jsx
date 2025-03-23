@@ -12,17 +12,23 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const accessToken = localStorage.getItem('accessToken')
+
 
   // Fetch user profile data when component mounts
   useState(() => {
     const fetchProfile = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch('http://localhost:8000/api/profile/', {
+        const response = await fetch('http://localhost:8000/api/users/profile/', {
           method: 'GET',
-          credentials: 'include', // Include cookies for authentication
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
         })
-        
+  
         if (!response.ok) {
           throw new Error('Not authenticated or server error')
         }

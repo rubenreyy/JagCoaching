@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 
 # Load environment variables
-load_dotenv()
+load_dotenv("./.env.development")
 
 class Settings(BaseSettings):
     HUGGINGFACE_API_KEY: str = os.getenv("HUGGINGFACE_API_KEY")

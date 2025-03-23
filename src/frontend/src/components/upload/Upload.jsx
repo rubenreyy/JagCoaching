@@ -7,12 +7,14 @@ import Feedback from '../feedback/Feedback';
 
 
 
-const Upload = ({ setCurrentPage }) => {
+const Upload = ({ setCurrentPage  }) => {
     const [files, setFiles] = useState([]);
     const [uploadProgress, setUploadProgress] = useState({});
     const [isProcessing, setIsProcessing] = useState(false);
     const [feedbackData, setFeedbackData] = useState({});
     const [feedback, setFeedback] = useState(null);
+    const accessToken = localStorage.getItem("accessToken");
+    console.log("accessToken",accessToken)
     // useEffect(() => {
     //     if (Object.keys(feedbackData).length > 0) {
     //         // When feedback data is available, redirect to feedback page
@@ -30,8 +32,12 @@ const Upload = ({ setCurrentPage }) => {
         formData.append("file", file);
 
         try {
-            const uploadResponse = await fetch("http://localhost:8000/api/upload/", {
+            const uploadResponse = await fetch("http://localhost:8000/api/videos/upload/", {
                 method: "POST",
+                headers: { 
+                    "Access-Control-Allow-Origin": "http://localhost:3000",
+                    "Authorization": `Bearer ${accessToken}`
+                },
                 body: formData,
             });
             
@@ -52,7 +58,7 @@ const Upload = ({ setCurrentPage }) => {
         try {
             console.log(JSON.stringify({ file_name: fileName }))
             console.log(fileName)
-            const response = await fetch("http://localhost:8000/api/process-audio/", {
+            const response = await fetch("http://localhost:8000/api/videos/process-audio/", {
                 method: "POST",
                 body: JSON.stringify({ file_name: fileName }),
                 headers: { "Content-Type": "application/json",

@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 fastapi = {extras = ["standard"], version = "*"}
-uvicorn = {extras = ["standard"], version = "*"}
 python-jose = "*"
 pydantic = "*"
 torch = "*"
@@ -13,6 +12,11 @@ librosa = "*"
 google-genai = "*"
 dotenv = "*"
 pymongo = {extras = ["srv"], version = "*"}
+pydub = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+pyjwt = "*"
+transformers = "*"
+keybert = "*"
 
 [dev-packages]
 

@@ -1,41 +1,38 @@
 # Include the project root directory in the Python path if testing this file only
-if __name__ == "__main__":
-    import os
-    import sys
+# third-party imports
+
+import sys
+import os
+if sys.path.count(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) == 0:
     sys.path.append(os.path.dirname(os.path.dirname(
-        os.path.abspath("JagCoaching/scripts"))))
+        os.path.dirname(os.path.abspath(__file__)))))
+from config import settings
+from routers import auth_router , videos_router , users_router
+import uvicorn
+from fastapi import FastAPI 
+from fastapi.middleware.cors import CORSMiddleware
 
 # Built-in imports
 from contextlib import asynccontextmanager
-import shutil
 from pathlib import Path
 
-# third-party imports
-import uvicorn
-from fastapi import FastAPI, UploadFile, File, Depends
-from fastapi.middleware.cors import CORSMiddleware
-# from routers import users_router, auth_router , videos_router
-from dependencies.auth import get_current_user
-from routers import videos_router , auth_router
 
+import dotenv
+
+dotenv.load_dotenv("./env.development") # consolidated to one env folder
+
+# dotenv.load_dotenv("./src/backend/.env.development")
 
 # Local imports
-from config import settings
-from utils import extract_audio
-from modelsold import FileName, UploadResponse
-from models.user import test_user , User
-from scripts import speech_analysis, SpeechAnalysisObject
 
 
-UPLOAD_DIR = None
-
+UPLOAD_DIR = settings.UPLOAD_FOLDER
 
 
 # Startup and shutdown event handlers for fastapi
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create the upload directory on startup."""
-    global UPLOAD_DIR
     UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
     UPLOAD_DIR.mkdir(exist_ok=True)
     yield
@@ -45,9 +42,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # TODO: Include the routers in the main FastAPI application when database is working
-# app.include_router(users_router)
+app.include_router(users_router)
 app.include_router(auth_router)
-# app.include_router(videos_router)
+app.include_router(videos_router)
 
 
 # Added CORS middleware to allow cross-origin requests from the frontend
@@ -59,14 +56,20 @@ app.add_middleware(
     allow_headers=settings.ALLOWED_HEADERS,
 )
 
+
+    # allow_content_types=["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
 # Index route
+
+
 @app.get("/")
 async def index():
     return {"message": "Welcome to the JagCoaching API!"}
 
 # API route
-@app.get("/api/")
-async def index():
+
+
+@app.get("/api/", response_description="API index route")
+async def apiroutes():
     """Returns information about all available API endpoints."""
     return {
         "endpoints": [
@@ -115,71 +118,9 @@ async def index():
     }
 
 
-# Get profile data for the logged in user
-@app.get("/api/profile/")
-def get_profile():
-    """Returns the profile data for the currently logged in user."""
 
-    return {
-        "status": "success",
-        "user": {
-            "username": test_user["username"],
-            "email": test_user["email"],
-            "name": "Test User",
-            "created_at": "2023-01-01T00:00:00Z",
-            "last_login": "2023-03-15T10:30:00Z",
-            "preferences": test_user.get("preferences", {})
-        }
-    }
-
-# Changed the endpoint to /api/upload/ to match the frontend
-@app.post("/api/upload/", response_model=UploadResponse)
-async def upload_video(file: UploadFile = File(...)):
-    """Handles video upload and saves it to the server."""
-    # Create the upload directory if it doesn't exist
-    global UPLOAD_DIR
-    
-    file_path = UPLOAD_DIR / file.filename
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"filename": file.filename, "status": "uploaded"}
-    
-
-# Changed the endpoint to /api/process-audio/ to match the frontend
-@app.post("/api/process-audio/")
-async def process_audio(file_name: FileName):
-    """Extracts and analyzes speech from uploaded video"""
-    global UPLOAD_DIR
-    print(file_name)
-
-    video_path = UPLOAD_DIR / file_name.file_name
-    audio_path = await extract_audio(video_path)
-    
-    # Run AI analysis
-    analysis = SpeechAnalysisObject.SpeechAnalysisObject(audio_path)
-
-    print(analysis)    
-
-    # Generate feedback
-    # feedback = analysis.generate_feedback()
-    
-   
-    # Format the feedback as a JSON-serializable dictionary
-    feedback_data = {
-        "transcript": analysis.transcript,
-        "sentiment": analysis.sentiment,
-        "filler_words": analysis.filler_words,
-        "emotion": analysis.emotion,
-        "keywords": analysis.keywords,
-        "pauses": analysis.pauses,
-        "wpm": analysis.wpm,
-        "clarity": analysis.clarity,
-    }
-    
-    # JSON response
-    return {"feedback": feedback_data}
 
 
 # Run the FastAPI application
 if __name__ == "__main__":
-    uvicorn.run("main:app", port=8000,reload=True)
+    uvicorn.run("main:app", port=8000, reload=True)
