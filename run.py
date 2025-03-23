@@ -1,10 +1,11 @@
 import subprocess
-import os
+import os , sys
 from warnings import catch_warnings
-
+import uvicorn
 
 # Application entry point that starts the frontend and backend and spawns subprocesses for them.
 
+# TODO: Still not implemented, to run use two seperate process and run the frontend and backend separately
 class ApplicationHandler:
     def __init__(self):
         self.frontend_dir = "src/frontend"
@@ -12,6 +13,7 @@ class ApplicationHandler:
         self.root_dir = os.getcwd()
         self.backend_process = None
         self.frontend_process = None
+        sys.path.append(self.root_dir)
 
     def run_frontend(self):
         """Run the frontend application."""
@@ -19,7 +21,7 @@ class ApplicationHandler:
         print(os.getcwd())
         try:
             # subprocess.run(["npm", "install"], check=True)
-            # self.frontend_process = subprocess.run(["npm", "run", "build"], check=True)
+            # self.frontend_process = subprocess.run(["npm", "run", "dev"], check=True)
             print("test frontend")
         except subprocess.CalledProcessError as e:
             print(e)
@@ -32,7 +34,7 @@ class ApplicationHandler:
         
         print(os.getcwd())
         try:
-            # self.backend_process = subprocess.run(["python", "main.py"], check=True)
+            self.backend_process = subprocess.run(["python", "main.py"], check=True)
             print("test")
         except subprocess.CalledProcessError as e:
             print(e)

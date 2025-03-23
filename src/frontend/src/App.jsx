@@ -12,6 +12,7 @@ import AccountPage from './components/account/AccountPage'
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [accessToken, setAccessToken] = useState(null)
 
   return (
     <div className="min-h-screen bg-[#EEEEEE]">
@@ -20,6 +21,8 @@ function App() {
         setCurrentPage={setCurrentPage}
         isLoggedIn={isLoggedIn}
         setIsLoggedIn={setIsLoggedIn}
+        accessToken={accessToken}
+        setAccessToken={setAccessToken}
       />
       {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} />}
       {currentPage === 'upload' && <Upload setCurrentPage={setCurrentPage} />}

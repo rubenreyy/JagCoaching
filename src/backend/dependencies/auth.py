@@ -1,91 +1,89 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from typing import Optional
 import os
+from typing import Optional
+from fastapi import Depends, HTTPException, status , APIRouter
+from fastapi.security import OAuth2PasswordBearer 
+import jwt
+from passlib.context import CryptContext
 from dotenv import load_dotenv
-from pydantic import BaseModel
-from models.user import User
+from database.cloud_db_controller import CloudDBController
+from models.user_models import UserLogin, UserResponse as User
+
+
 
 # Load environment variables
-load_dotenv()
+load_dotenv("./src/backend/.env.development")
 
 # Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY_HERE")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES","30"))
 
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
 
 
-class TokenData(BaseModel):
-    username: Optional[str] = None
-    user_id: Optional[str] = None
+router = APIRouter()
 
 
 
+
+
+def verify_password(plain_password, hashed_password):
+    """ Verify the given password against the hashed password."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    """ Hash the given password."""
+    return pwd_context.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create a new JWT access token"""
+    """ Create an access token with the given data and expiration time."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now() + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
+        expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """Dependency to get the current user from a JWT token"""
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    """ Get the current user from the given token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        user_id: str = payload.get("id")
-
-        if username is None or user_id is None:
+        if username is None:
             raise credentials_exception
-
-        token_data = TokenData(username=username, user_id=user_id)
-    except JWTError:
+    except jwt.PyJWTError:
         raise credentials_exception
 
-    # In a real application, you would fetch the user from your database here
-    # This is just a placeholder implementation
-    user = User(
-        id=token_data.user_id,
-        username=token_data.username,
-        email=f"{token_data.username}@example.com"
-    )
+    return User(username=username)
 
+
+def get_user(db: CloudDBController, username: str):
+    """ Get the user from the database."""
+    db.connect()
+    user = db.find_document(db_name="JagCoaching", collection_name="users", filter_dict={"username": username})
     if user is None:
-        raise credentials_exception
-
-    if user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
     return user
 
-
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    """Dependency to ensure the user is active"""
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
-async def get_password_hash(password: str):
-    """Generate a password hash"""
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    return pwd_context.hash(password)
+def authenticate_user(db: CloudDBController, username: str, password: str):
+    """ Authenticate the user by verifying the current user from the token."""
+    user = get_user(db, username)
+    if not user:
+        return False
+    if not verify_password(password, user['password']):
+        return False
+    return user

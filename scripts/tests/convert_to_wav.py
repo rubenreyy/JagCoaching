@@ -4,7 +4,7 @@ from pydub import AudioSegment
 # Define the directory containing the mp4 files
 # directory = r"path/to/tests"
 
-directory = r"scripts\tests"
+directory = r"scripts/tests"
 
 # Loop through all files in the directory
 for filename in os.listdir(directory):
