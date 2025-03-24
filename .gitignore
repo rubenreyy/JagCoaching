@@ -1,0 +1,14 @@
+.env
+.env.development
+.env.production
+*.pyc
+__pycache__/
+node_modules/
+uploads/
+*.mp4
+*.wav
+.vscode
+.pytest_cache
+/cached_models
+scripts/tests/
+scripts/tests/convert_to_wav.py

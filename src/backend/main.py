@@ -1,51 +1,126 @@
-from fastapi import FastAPI, UploadFile, File
-import shutil
+# Include the project root directory in the Python path if testing this file only
+# third-party imports
+
+import sys
+import os
+if sys.path.count(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) == 0:
+    sys.path.append(os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__)))))
+from config import settings
+from routers import auth_router , videos_router , users_router
+import uvicorn
+from fastapi import FastAPI 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Built-in imports
+from contextlib import asynccontextmanager
 from pathlib import Path
-from .config import settings
-from .utils import extract_audio, transcribe_audio
-from .models import UploadResponse, SpeechEvaluationRequest, SpeechEvaluationResponse
-from transformers import pipeline
-import whisper
 
-app = FastAPI()
 
-UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
-UPLOAD_DIR.mkdir(exist_ok=True)
+import dotenv
 
-# Load models
-whisper_model = whisper.load_model("base")
-llm_pipeline = pipeline("text-generation", model=settings.LLM_MODEL)
+dotenv.load_dotenv("./env.development") # consolidated to one env folder
 
-@app.post("/upload/", response_model=UploadResponse)
-async def upload_video(file: UploadFile = File(...)):
-    """Handles video upload and saves it to the server."""
-    file_path = UPLOAD_DIR / file.filename
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"filename": file.filename, "status": "uploaded"}
+# dotenv.load_dotenv("./src/backend/.env.development")
 
-@app.post("/process-audio/")
-def process_audio(file_name: str):
-    """Extracts and processes audio from a video file."""
-    video_path = UPLOAD_DIR / file_name
-    audio_path = extract_audio(video_path)
-    transcript = transcribe_audio(audio_path)
-    return {"transcript": transcript, "audio_path": str(audio_path)}
+# Local imports
 
-@app.post("/evaluate-speech/", response_model=SpeechEvaluationResponse)
-def evaluate_speech(request: SpeechEvaluationRequest):
-    """Uses LLM to evaluate speech transcript."""
-    prompt = f"""
-    Evaluate the following speech based on clarity, coherence, engagement, and persuasiveness.
-    Provide constructive feedback.
 
-    Speech Transcript:
-    {request.transcript}
-    """
-    response = llm_pipeline(prompt, max_length=300)
-    feedback = response[0]['generated_text']
-    return {"feedback": feedback}
+UPLOAD_DIR = settings.UPLOAD_FOLDER
 
+
+# Startup and shutdown event handlers for fastapi
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Create the upload directory on startup."""
+    UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
+    UPLOAD_DIR.mkdir(exist_ok=True)
+    yield
+    print("Shutting down...")
+
+
+app = FastAPI(lifespan=lifespan)
+
+# TODO: Include the routers in the main FastAPI application when database is working
+app.include_router(users_router)
+app.include_router(auth_router)
+app.include_router(videos_router)
+
+
+# Added CORS middleware to allow cross-origin requests from the frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_HOSTS,
+    allow_credentials=True,
+    allow_methods=settings.ALLOWED_METHODS,
+    allow_headers=settings.ALLOWED_HEADERS,
+)
+
+
+    # allow_content_types=["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
+# Index route
+
+
+@app.get("/")
+async def index():
+    return {"message": "Welcome to the JagCoaching API!"}
+
+# API route
+
+
+@app.get("/api/", response_description="API index route")
+async def apiroutes():
+    """Returns information about all available API endpoints."""
+    return {
+        "endpoints": [
+            {
+                "path": "/",
+                "method": "GET",
+                "description": "This index page showing all available endpoints and welcome message."
+            },
+            {
+                "path": "/api/upload/",
+                "method": "POST",
+                "description": "Upload a video file"
+            },
+            {
+                "path": "/api/process-audio/",
+                "method": "POST",
+                "description": "Extract and analyze speech from an uploaded video"
+            },
+            {
+                "path": "/api/login/",
+                "method": "POST",
+                "description": "Login to the application"
+            },
+            {
+                "path": "/api/logout/",
+                "method": "POST",
+                "description": "Logout the user from the application"
+            },
+            {
+                "path": "/api/register/",
+                "method": "POST",
+                "description": "Register a new user account"
+            },
+            {
+                "path": "/api/user/",
+                "method": "GET",
+                "description": "Check if the user is logged in"
+            },
+            {
+                "path": "/api/profile/",
+                "method": "GET",
+                "description": "Get profile data for the logged in user"
+            },
+        ],
+        "version": "1.0"
+    }
+
+
+
+
+
+# Run the FastAPI application
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", port=8000, reload=True)
