@@ -1,6 +1,5 @@
 import os
 from datetime import timedelta
-from tokenize import Token
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -9,7 +8,7 @@ from dependencies.auth import ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user, ge
 from database.cloud_db_controller import CloudDBController
 from dotenv import load_dotenv
 
-load_dotenv("./src/backend/.env.development")
+load_dotenv("./.env.development")
 
 router = APIRouter(
     prefix="/api",
@@ -20,6 +19,7 @@ router = APIRouter(
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES","30"))
 DB_CONNECTION = CloudDBController()
 
 @router.post("/register/")
@@ -94,35 +94,3 @@ async def logout(current_user: UserInDB = Depends(get_current_user)):
     return {"status": "success", "message": "Logout successful!"}
 
 
-# @router.get("/me/")
-# async def read_users_me(current_user: UserInDB = Depends(get_current_user)):
-#     return {"status": "success", "user": current_user}
-
-
-# Moving for Deletion
-# @router.post("/login/")
-# async def login(form: OAuth2PasswordRequestForm = Depends()):
-#     # Logic for user login
-#     user = {
-#         "username": form.username,
-#         "password": form.password
-#     }
-    
-#     print(user)
-    
-#     # Initialize the database controller
-#     db_controller = CloudDBController()
-    
-#     # Check if the user exists in the database
-#     user_in_db = db_controller.find_document(
-#         "JagCoaching", 
-#         "users", 
-#         {"email": user['username']}
-#     )
-
-#     # If user doesn't exist, return error
-#     if not user_in_db:
-#         return {"status": "error", "message": "User not found"}
-#     # This is just a placeholder for basic functionality
-#     print(user)
-#     return {"status": "success", "message": "Login successful!"}

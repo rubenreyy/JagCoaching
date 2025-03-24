@@ -1,15 +1,17 @@
 import os
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from bson import ObjectId
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status 
+
 
 from database.cloud_db_controller import CloudDBController
-from dependencies.auth import CloudDBController, get_current_user
-from models.user_models import UserInDB as User
-from models.user_models import  UserCreate, UserUpdate, UserInDB
+from dependencies.auth import CloudDBController, get_current_active_user, get_current_user, oauth2_scheme, get_current_active_user
+
+from models.user_models import  UserCreate, UserUpdate, UserInDB, UserResponse, User , UserInDB
 from dependencies.auth import get_password_hash
 from dotenv import load_dotenv
+
+
 
 # Load environment variables
 load_dotenv("./.env.development")
@@ -29,30 +31,22 @@ router = APIRouter(
 
 # Get profile data for the logged in user
 @router.get("/profile/", response_description="Get profile data for the logged in user")
-def get_profile(token: OAuth2PasswordBearer = Depends(get_current_user)):
+def get_profile(token: Annotated[str, Depends(get_current_active_user)]):
     """Returns the profile data for the currently logged in user."""
-
+    print(token)
     # decrypts key and gets user
-    user =  get_current_user(token)
-    DB_CONNECTION.connect()
-
-    # gets user in db
-    user_in_db = DB_CONNECTION.find_document("JagCoaching", "users", {"email": user.email})
-    DB_CONNECTION.client.close()
-    
-
-    if user_in_db is None:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = get_current_active_user(token)
 
     return {
         "status": "success",
         "user": {
-            "username": user_in_db["username"],
-            "email": user_in_db["email"],
-            "name": user_in_db["name"],
-            "created_at": user_in_db["created_at"],
-            "last_login": user_in_db["last_login"],
-            "preferences": user.get("preferences", {})
+            "username": user["username"],
+            "email": user["email"],
+            "is_active": user["is_active"],
+            # "name": user["name"],
+            # "created_at": user["created_at"],
+            # "last_login": user["last_login"],
+            # "preferences": user.get("preferences", {})
         }
     }
 

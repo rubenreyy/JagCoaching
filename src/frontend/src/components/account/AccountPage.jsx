@@ -12,7 +12,7 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
-  const accessToken = localStorage.getItem('accessToken')
+  const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'))
 
 
   // Fetch user profile data when component mounts
@@ -22,11 +22,12 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
         setIsLoading(true)
         const response = await fetch('http://localhost:8000/api/users/profile/', {
           method: 'GET',
+          mode: 'cors',
+          credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            // 'Authorization': "Bearer " + accessToken,
             'Content-Type': 'application/json'
           },
-          credentials: 'include'
         })
   
         if (!response.ok) {
