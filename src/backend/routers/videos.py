@@ -4,10 +4,12 @@ import shutil
 import os
 import uuid
 import sys
+from bson import ObjectId
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from models.user_models import UserResponse as User
-from dependencies.auth import get_current_user
+from database.cloud_db_controller import CloudDBController
+from dependencies.auth import get_current_user , get_current_active_user
 from models import FileName, VideoCreate
 from models.video_models import Video
 from models.schemas import UploadResponse
@@ -24,6 +26,8 @@ router = APIRouter(
 UPLOAD_DIR = Path("uploads/videos")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+DB_CONNECTION = CloudDBController()
+
 
 # FIXME: Add authentication back to make it work for uploads
 # async def upload_video(
@@ -38,10 +42,14 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Upload video file route
 @router.post("/upload/", response_model=UploadResponse, response_description="File upload to server & extracts audio")
 async def upload_video(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Handles video upload and saves it to the server."""
-
+    print(current_user)
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="User not logged in")
+    
     # Create the upload directory if it doesn't exist
     print("uploading video")
     print(file.filename)
@@ -51,21 +59,26 @@ async def upload_video(
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     
     file_path = UPLOAD_DIR / unique_filename
-    # file_path = UPLOAD_DIR / file.filename
 
 
     with file_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer) 
 
     # Create a new video object and insert into the database
-    # video = VideoCreate(
-    #     file_path=file_path,
-    #     title=file.filename,
-    #     description=None,
-    #     tags=[],
-    #     # user_id=current_user.id  # Use the current user's ID FIXME: need to add auth back for this 
-    # )
-    
+    video = VideoCreate(
+        file_path=str(file_path),
+        title=file.filename,
+        description=None,
+        tags=[],
+        user_id= str(current_user['_id'])  # Updated to use current_user.id
+    )
+
+    # Save the video to the database
+    DB_CONNECTION.connect()
+    video = DB_CONNECTION.add_document("JagCoaching", "videos", video.model_dump())
+    # FIXME: need to fix the model in the db to store the video id in the user document
+    # DB_CONNECTION.update_document("JagCoaching", "users", str(current_user['_id']), {"$push": {"videos": video.inserted_id}})
+    DB_CONNECTION.client.close()
     return {"filename": unique_filename, "status": "uploaded"}
 
 

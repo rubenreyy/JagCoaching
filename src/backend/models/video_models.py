@@ -35,7 +35,7 @@ class VideoCreate(VideoBase):
     file_path: str
 
 # Model for updating a video
-class VideoUpdate(BaseModel):
+class VideoUpdate(VideoBase):
     title: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None
