@@ -17,6 +17,7 @@ uvicorn = {extras = ["standard"], version = "*"}
 pyjwt = "*"
 transformers = "*"
 keybert = "*"
+bcrypt = "*"
 
 [dev-packages]
 

@@ -44,24 +44,27 @@ async def upload_video(
 
     # Create the upload directory if it doesn't exist
     print("uploading video")
-
+    print(file.filename)
     # Generate a unique filename
     file_extension = os.path.splitext(file.filename)[1]
+    print(file_extension)
     unique_filename = f"{uuid.uuid4()}{file_extension}"
+    
     file_path = UPLOAD_DIR / unique_filename
+    # file_path = UPLOAD_DIR / file.filename
 
 
     with file_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer) 
 
     # Create a new video object and insert into the database
-    video = VideoCreate(
-        file_path=file_path,
-        title=file.filename,
-        description=None,
-        tags=[],
-        # user_id=current_user.id  # Use the current user's ID FIXME: need to add auth back for this 
-    )
+    # video = VideoCreate(
+    #     file_path=file_path,
+    #     title=file.filename,
+    #     description=None,
+    #     tags=[],
+    #     # user_id=current_user.id  # Use the current user's ID FIXME: need to add auth back for this 
+    # )
     
     return {"filename": unique_filename, "status": "uploaded"}
 

@@ -9,22 +9,16 @@ load_dotenv("./.env.development")
 
 
 
-class CloudMongoDBController(MongoClient):
-    def __init__(self):
-        # Get the URI from the environment variables
-        db_cloud_password = os.getenv("DB_CLOUD_PASSWORD")
-        self.uri = os.getenv("MONGO_DB_URI")
-        self.client = self.connect()
-
 class CloudDBController:
     """Class to handle MongoDB operations"""
 
     def __init__(self):
         # Get the URI from the environment variables
+        db_cloud_username = os.getenv("DB_CLOUD_USERNAME")
         db_cloud_password = os.getenv("DB_CLOUD_PASSWORD")
         self.uri = os.getenv(
-            "MONGO_URI", f"mongodb+srv://chnast01:{db_cloud_password}@cluster0.i148f.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-        self.client = self.connect()
+            "MONGO_URI", f"mongodb+srv://{db_cloud_username}:{db_cloud_password}@cluster0.i148f.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+        self.client = MongoClient(self.uri, server_api=ServerApi('1'), connect=False)
 
     def connect(self):
         """Connect to the MongoDB client"""
@@ -33,8 +27,8 @@ class CloudDBController:
         try:
             self.client.admin.command('ping')
             print("Pinged your deployment. You successfully connected to MongoDB!")
-        except ConnectionError as e:
-            print(e)
+        except Exception as e:
+            print(f"Connection failed: {e}")
         return self.client
 
     def get_database(self, db_name):

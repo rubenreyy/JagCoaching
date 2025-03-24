@@ -1,31 +1,35 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta , timezone
 import os
-from typing import Optional
+
+from typing import Annotated, Optional
 from fastapi import Depends, HTTPException, status , APIRouter
 from fastapi.security import OAuth2PasswordBearer 
 import jwt
+import bcrypt
+bcrypt.__about__ = bcrypt # some bug with passlib and bcrypt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 from database.cloud_db_controller import CloudDBController
-from models.user_models import UserLogin, UserResponse as User
+from models.user_models import TokenData, UserLogin, UserResponse , User
 
 
 
 # Load environment variables
-load_dotenv("./src/backend/.env.development")
+load_dotenv("./.env.development")
 
 # Configuration
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY","8aff34e1-d330-4eb8-b4be-5d35f5885451")
+ALGORITHM = os.getenv("ALGORITHM","HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES","30"))
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token",auto_error=False)
 
 
 router = APIRouter()
 
+DB_CONNECTION = CloudDBController()
 
 
 
@@ -43,29 +47,44 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """ Create an access token with the given data and expiration time."""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 def get_current_user(token: str = Depends(oauth2_scheme)):
     """ Get the current user from the given token."""
+    print("getting user: ")
+    print(token)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Could not validate credentials(user null)",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(payload)
         username: str = payload.get("sub")
         if username is None:
+            print("username is none")
             raise credentials_exception
-    except jwt.PyJWTError:
-        raise credentials_exception
+        token_data = TokenData(username=username)
+    except jwt.PyJWTError as exc:
+        print("jwt error")
+        raise credentials_exception from exc
+    user = get_user(db=DB_CONNECTION, username=token_data.username)
 
-    return User(username=username)
+    return user
+
+
+def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
+    """ Get the current active user."""
+    if current_user is None:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
 
 
 def get_user(db: CloudDBController, username: str):
