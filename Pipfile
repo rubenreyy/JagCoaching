@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = {extras = ["standard"], version = "*"}
+python-jose = "*"
+pydantic = "*"
+torch = "*"
+librosa = "*"
+google-genai = "*"
+dotenv = "*"
+pymongo = {extras = ["srv"], version = "*"}
+pydub = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+pyjwt = "*"
+transformers = "*"
+keybert = "*"
+bcrypt = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
+python_full_version = "3.12.9"

@@ -9,7 +9,43 @@ const Signup = ({ setCurrentPage }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // TODO: Implement signup logic
+    
+    // First check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    // Call the register API endpoint
+    fetch('http://localhost:8000/api/register/', {
+      method: 'POST',
+      headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': 'http://localhost:3000',
+      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      },
+      body: JSON.stringify({
+      username: formData.email,
+      email: formData.email,
+      password: formData.password,
+      }),
+    })
+    .then(response => {
+      if (!response.ok) {
+      throw new Error('Registration failed');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Registration successful:', data);
+      alert('Account created successfully! Please login.');
+      setCurrentPage('login');
+    })
+    .catch(error => {
+      console.error('Registration error:', error);
+      alert('Registration failed. Please try again.');
+    });
     console.log('Signup attempt:', formData)
   }
 
