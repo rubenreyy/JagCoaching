@@ -70,14 +70,11 @@ def transcribe_speech(audio_path):
 
 
 def test_pipeline(audio_path):
-    """_summary_
+    """_summary_"""
+    # Implement this eventually
+    # processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
+    # model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base-960h", torch_dtype=torch.float16).to(device)
 
-    Args:
-        audio_path (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
     transcribe = pipeline(task="automatic-speech-recognition",
                           model="openai/whisper-base", use_fast=True)
     audio, sr = load_librosa(audio_path)
@@ -223,49 +220,52 @@ def main():
 
     # Example Usage
     audio_file = "scripts/tests/Student_1.wav"  # Path to speech file
-    transcript = transcribe_speech(audio_file)
+    # transcript = transcribe_speech(audio_file)
     # print(transcript)
-    # transcript = test_pipeline(audio_file)
-    # print(transcript)
-    sentiment = analyze_sentiment(transcript)
-    filler_words = detect_filler_words(transcript)
-    emotion = analyze_emotion(audio_file)
-    keywords = extract_keywords(transcript)
-    pauses = detect_pauses(audio_file)
-    wpm = analyze_speech_rate(transcript, audio_file)
-    corrected_text = grammar_correction(transcript)
-    monotone = analyze_monotone_speech(audio_file)
-    clarity = evaluate_pronunciation_clarity(audio_file)
+    transcript = test_pipeline(audio_file)
+    print(transcript)
+    # summary = testing_summarization(transcript)
+    # print(summary)
+    # sentiment = analyze_sentiment(transcript)
+    # filler_words = detect_filler_words(transcript)
+    # emotion = analyze_emotion(audio_file)
+    # keywords = extract_keywords(transcript)
+    # pauses = detect_pauses(audio_file)
+    # wpm = analyze_speech_rate(transcript, audio_file)
+    # corrected_text = grammar_correction(transcript)
+    # monotone = analyze_monotone_speech(audio_file)
+    # clarity = evaluate_pronunciation_clarity(audio_file)
     # print(clarity)
 
-    feedback_report = generate_feedback(
-        transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity)
-    feedback_data = {
-        "transcription": transcript[:200] + "...",
-        "sentiment": {
-            "label": sentiment[0]['label'],
-            "score": round(sentiment[0]['score'], 2)
-        },
-        "filler_words": filler_words,
-        "emotion": {
-            "label": emotion[0]['label'],
-            "score": round(emotion[0]['score'], 2)
-        },
-        "key_topics": keywords,
-        "significant_pauses": pauses,
-        "speech_rate_wpm": wpm,
-        "grammar_corrections": corrected_text,
-        "speech_tone": monotone,
-        "pronunciation_clarity_percentage": clarity
-    }
+    # feedback_report = generate_feedback(
+    #     transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity)
+    # feedback_data = {
+    #     "transcription": transcript[:200] + "...",
+    #     "sentiment": {
+    #         "label": sentiment[0]['label'],
+    #         "score": round(sentiment[0]['score'], 2)
+    #     },
+    #     "filler_words": filler_words,
+    #     "emotion": {
+    #         "label": emotion[0]['label'],
+    #         "score": round(emotion[0]['score'], 2)
+    #     },
+    #     "key_topics": keywords,
+    #     "significant_pauses": pauses,
+    #     "speech_rate_wpm": wpm,
+    #     "grammar_corrections": corrected_text,
+    #     "speech_tone": monotone,
+    #     "pronunciation_clarity_percentage": clarity
+    # }
     
-    with open("scripts/tests/feedback_report.json", "w") as f:
-        json.dump(feedback_data, f, indent=4)
-    print(feedback_report)
+    # with open("scripts/tests/feedback_report.json", "w") as f:
+    #     json.dump(feedback_data, f, indent=4)
+    # print(feedback_report)
     
 
     # smart_report = generate_smart_report(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity)
     # print(smart_report)
+
 
 
 if __name__ == "__main__":
