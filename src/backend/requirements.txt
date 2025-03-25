@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydub
+whisper
+transformers
+pydantic
