@@ -1,0 +1,50 @@
+# Virtual Environment
+venv/
+env/
+.env
+.venv/
+ENV/
+
+# Environment Variables
+.env
+.env.development
+.env.production
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+dist/
+build/
+*.egg
+*.egg-info/
+.eggs/
+.pytest_cache
+.coverage
+htmlcov/
+
+# Dependencies
+node_modules/
+
+# Project specific
+uploads/
+*.mp4
+*.wav
+.vscode
+.pytest_cache
+/cached_models
+scripts/tests/
+scripts/tests/convert_to_wav.py
+
+# PyTorch and other large model files
+*.pt
+*.pth
+*.onnx
+*.dylib
+*.so
+*.dll
+torch/
+transformers/
