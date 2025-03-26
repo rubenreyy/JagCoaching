@@ -18,6 +18,20 @@ from pathlib import Path
 
 
 import dotenv
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('app.log')
+    ]
+)
+
+# Create logger instance
+logger = logging.getLogger(__name__)
 
 dotenv.load_dotenv("./env.development") # consolidated to one env folder
 
@@ -32,11 +46,22 @@ UPLOAD_DIR = settings.UPLOAD_FOLDER
 # Startup and shutdown event handlers for fastapi
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create the upload directory on startup."""
-    UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
-    UPLOAD_DIR.mkdir(exist_ok=True)
-    yield
-    print("Shutting down...")
+    """Create necessary directories on startup."""
+    try:
+        UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
+        VIDEO_DIR = UPLOAD_DIR / "videos"
+        AUDIO_DIR = VIDEO_DIR / "audio"
+        
+        for directory in [UPLOAD_DIR, VIDEO_DIR, AUDIO_DIR]:
+            directory.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Created directory: {directory}")
+        
+        yield
+        
+        logger.info("Shutting down...")
+    except Exception as e:
+        logger.error(f"Error in lifespan: {str(e)}")
+        raise
 
 
 app = FastAPI(lifespan=lifespan)
@@ -50,12 +75,20 @@ app.include_router(videos_router)
 # Added CORS middleware to allow cross-origin requests from the frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
-    allow_methods=settings.ALLOWED_METHODS,
-    allow_headers=settings.ALLOWED_HEADERS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["*"]
 )
 
+# Add this before the CORS middleware
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
     # allow_content_types=["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
 # Index route

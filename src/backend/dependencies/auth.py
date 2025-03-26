@@ -1,16 +1,16 @@
-from datetime import datetime, timedelta , timezone
+from datetime import datetime, timedelta, timezone
 import os
 
 from typing import Annotated, Optional
-from fastapi import Depends, HTTPException, status , APIRouter
-from fastapi.security import OAuth2PasswordBearer 
+from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi.security import OAuth2PasswordBearer
 import jwt
 import bcrypt
 bcrypt.__about__ = bcrypt # some bug with passlib and bcrypt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 from database.cloud_db_controller import CloudDBController
-from models.user_models import TokenData, UserLogin, UserResponse , User
+from models.user_models import TokenData, UserLogin, UserResponse, User
 
 
 
@@ -34,9 +34,12 @@ DB_CONNECTION = CloudDBController()
 
 
 
-def verify_password(plain_password, hashed_password):
-    """ Verify the given password against the hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Password verification error: {str(e)}")
+        return False
 
 def get_password_hash(password):
     """ Hash the given password."""
@@ -98,11 +101,20 @@ def get_user(db: CloudDBController, username: str):
         )
     return user
 
-def authenticate_user(db: CloudDBController, username: str, password: str):
-    """ Authenticate the user by verifying the current user from the token."""
-    user = get_user(db, username)
-    if not user:
+def authenticate_user(db: CloudDBController, email: str, password: str):
+    try:
+        user = db.find_document("JagCoaching", "users", {"email": email})
+        if not user:
+            print(f"User not found: {email}")
+            return False
+            
+        print(f"Found user document: {user}")
+        
+        if not verify_password(password, user.get('password', '')):
+            print("Password verification failed")
+            return False
+            
+        return user
+    except Exception as e:
+        print(f"Authentication error: {str(e)}")
         return False
-    if not verify_password(password, user['password']):
-        return False
-    return user

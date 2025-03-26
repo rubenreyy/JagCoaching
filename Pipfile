@@ -14,10 +14,13 @@ dotenv = "*"
 pymongo = {extras = ["srv"], version = "*"}
 pydub = "*"
 uvicorn = {extras = ["standard"], version = "*"}
-pyjwt = "*"
+PyJWT = "*"
 transformers = "*"
 keybert = "*"
 bcrypt = "*"
+python-multipart = "*"
+pydantic-settings = "*"
+passlib = {extras = ["bcrypt"], version = "*"}
 
 [dev-packages]
 

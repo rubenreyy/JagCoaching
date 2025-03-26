@@ -1,10 +1,10 @@
 import os
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status 
 from fastapi.security import OAuth2PasswordRequestForm
 from models.user_models import  UserCreate, UserInDB, UserLogin , Token
-from dependencies.auth import ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user, get_current_user , create_access_token, get_password_hash
+from dependencies.auth import ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user, get_current_user , create_access_token, get_password_hash, verify_password
 from database.cloud_db_controller import CloudDBController
 from dotenv import load_dotenv
 
@@ -25,64 +25,106 @@ DB_CONNECTION = CloudDBController()
 @router.post("/register/")
 async def register(form: UserLogin):
     """ Register a new user account """
-    # Initialize the database controller
-    DB_CONNECTION.connect()
+    try:
+        # Initialize the database controller
+        DB_CONNECTION.connect()
+        
+        # Check if user already exists
+        existing_user = DB_CONNECTION.find_document(
+            "JagCoaching",
+            "users",
+            {"email": form.email}
+        )
+
+        # If user already exists, return error
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="User with this email already exists"
+            )
+
+        # Create new user document
+        hashed_password = get_password_hash(form.password)
+        user_document = {
+            "username": form.email,  # Using email as username
+            "email": form.email,
+            "password": hashed_password,  # Store the hashed password
+            "is_active": True,
+            "created_at": datetime.now()
+        }
+
+        # Add user to the database
+        result = DB_CONNECTION.add_document("JagCoaching", "users", user_document)
+
+        # Check if user was successfully added
+        if not result.acknowledged:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create user"
+            )
+
+        return {"status": "success", "message": "Registration successful!"}
     
-    print(DB_CONNECTION.get_database("JagCoaching"))
-    # Check if user already exists
-    existing_user = DB_CONNECTION.find_document(
-        "JagCoaching",
-        "users",
-        {"email": form.email}
-    )
-
-    # If user already exists, return error
-    if existing_user:
-        return {"status": "error", "message": "User with this email already exists"}
-
-    # Create new user document
-    user_document = UserCreate(
-        email=form.email,
-        username=form.email,
-        password=get_password_hash(form.password)
-    ).model_dump()
-
-    # Add user to the database
-    result = DB_CONNECTION.add_document("JagCoaching", "users", user_document)
-
-    # Check if user was successfully added
-    if not result.acknowledged:
-        return {"status": "error", "message": "Failed to create user"}
-    print(result)
-    # Close the database connection
-    DB_CONNECTION.client.close()
-    return {"status": "success", "message": "Registration successful!"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=422,
+            detail=str(e)
+        )
+    finally:
+        # Close the database connection
+        if DB_CONNECTION.client:
+            DB_CONNECTION.client.close()
 
 
 
 @router.post("/auth/token/", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-# async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    """ Get access token for user login """
-    print(form_data.username)
-    # Initialize the database controller
-    DB_CONNECTION.connect()
-    user = authenticate_user(DB_CONNECTION, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    """Get access token for user login"""
+    try:
+        print(f"Login attempt for user: {form_data.username}")
+        
+        # Initialize the database controller
+        DB_CONNECTION.connect()
+        
+        # Find user by email
+        user = DB_CONNECTION.find_document(
+            "JagCoaching",
+            "users",
+            {"email": form_data.username}
         )
-    # create token if everything else passes
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
-    )
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
+        print(f"Found user: {user}")
+        
+        # Verify password
+        if not verify_password(form_data.password, user.get('password', '')):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    # close db connection
-    DB_CONNECTION.client.close()
-    return Token(access_token=access_token, token_type="bearer")
+        # Create access token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["email"]},
+            expires_delta=access_token_expires
+        )
+
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except Exception as e:
+        print(f"Login error: {str(e)}")
+        raise
+    finally:
+        if DB_CONNECTION.client:
+            DB_CONNECTION.client.close()
 
 
 
