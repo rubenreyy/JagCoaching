@@ -66,3 +66,42 @@ TypeError: 'module' object is not callable
 2025-03-25 03:31:01,655 - scripts.speech_analysis - INFO - Loading audio file...
 2025-03-25 03:31:02,436 - scripts.speech_analysis - INFO - Processing audio through model...
 2025-03-25 03:31:02,487 - scripts.speech_analysis - INFO - Generating transcription...
+2025-03-26 14:18:35,389 - main - INFO - Created directory: uploads
+2025-03-26 14:18:35,389 - main - INFO - Created directory: uploads/videos
+2025-03-26 14:18:35,389 - main - INFO - Created directory: uploads/videos/audio
+2025-03-26 14:22:50,130 - main - INFO - Shutting down...
+2025-03-26 14:22:53,719 - main - INFO - Created directory: uploads
+2025-03-26 14:22:53,719 - main - INFO - Created directory: uploads/videos
+2025-03-26 14:22:53,719 - main - INFO - Created directory: uploads/videos/audio
+2025-03-26 14:22:59,685 - main - INFO - Shutting down...
+2025-03-26 14:23:06,552 - main - INFO - Created directory: uploads
+2025-03-26 14:23:06,552 - main - INFO - Created directory: uploads/videos
+2025-03-26 14:23:06,552 - main - INFO - Created directory: uploads/videos/audio
+2025-03-26 14:23:28,920 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67e22f7e0214b1272f827b21'), 'username': 'bro@gmail.com', 'email': 'bro@gmail.com', 'password': '$2b$12$ldSQb5AP.d..92xdY08VjurzB3S.upxz5blLazfEl2TIdcwzskvne', 'is_active': True, 'created_at': datetime.datetime(2025, 3, 24, 23, 22, 22, 599000)}
+2025-03-26 14:23:28,923 - routers.videos - INFO - File details - Filename: Student_3.mp4, Content-Type: video/mp4
+2025-03-26 14:23:28,925 - routers.videos - INFO - Creating upload directory
+2025-03-26 14:23:28,927 - routers.videos - INFO - Generated unique filename: e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:28,929 - routers.videos - INFO - Saving file to: uploads/videos/e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:28,944 - routers.videos - INFO - File saved successfully
+2025-03-26 14:23:28,944 - routers.videos - INFO - Connecting to database
+2025-03-26 14:23:29,645 - routers.videos - INFO - Video saved to database with ID: 67e4543151478aa2deb1ab0b
+2025-03-26 14:23:31,675 - routers.videos - INFO - Starting audio processing for file: e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:31,676 - routers.videos - INFO - Looking for video at: uploads/videos/e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:31,676 - routers.videos - INFO - Starting audio extraction...
+2025-03-26 14:23:31,676 - utils - INFO - Starting audio extraction from uploads/videos/e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:31,676 - utils - INFO - Created output directory: uploads/videos/audio
+2025-03-26 14:23:31,676 - utils - INFO - Will save audio to: uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - utils - INFO - Audio extraction completed: uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - routers.videos - INFO - Starting audio analysis...
+2025-03-26 14:23:33,741 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-03-26 14:23:35,349 - scripts.speech_analysis - INFO - Loading audio file...
+2025-03-26 14:23:43,490 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-03-26 14:23:43,556 - scripts.speech_analysis - INFO - Generating transcription...
+2025-03-26 15:04:46,948 - scripts.speech_analysis - INFO - Transcription completed successfully
+2025-03-26 15:05:12,613 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-03-26 15:05:12,614 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-03-26 15:05:40,432 - routers.videos - INFO - Audio analysis completed
+2025-03-26 15:05:40,433 - routers.videos - INFO - Updating database with analysis results...
+2025-03-26 15:05:41,243 - routers.videos - INFO - Database updated successfully

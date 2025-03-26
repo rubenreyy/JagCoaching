@@ -1,16 +1,16 @@
-from datetime import datetime, timedelta , timezone
+from datetime import datetime, timedelta, timezone
 import os
 
 from typing import Annotated, Optional
-from fastapi import Depends, HTTPException, status , APIRouter
-from fastapi.security import OAuth2PasswordBearer 
+from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi.security import OAuth2PasswordBearer
 import jwt
 import bcrypt
 bcrypt.__about__ = bcrypt # some bug with passlib and bcrypt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 from database.cloud_db_controller import CloudDBController
-from models.user_models import TokenData, UserLogin, UserResponse , User
+from models.user_models import TokenData, UserLogin, UserResponse, User
 
 
 
