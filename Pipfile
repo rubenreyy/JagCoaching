@@ -14,7 +14,7 @@ dotenv = "*"
 pymongo = {extras = ["srv"], version = "*"}
 pydub = "*"
 uvicorn = {extras = ["standard"], version = "*"}
-pyjwt = "*"
+PyJWT = "*"
 transformers = "*"
 keybert = "*"
 bcrypt = "*"

@@ -3,20 +3,22 @@ AI-powered presentation analysis tool by Ruben Reyes, Chris Nastasi, Angelo Badi
 
 ## Key Changes Made
 1. **Authentication System**
-   - Implemented JWT token-based auth
+   - Implemented JWT token-based auth using PyJWT
    - Added user sessions management
    - Secured API endpoints
+   - Bcrypt password hashing
 
 2. **Video Processing**
    - Added robust error handling
    - Improved file upload process
    - Added audio extraction pipeline
-   - Enhanced feedback generation
+   - Enhanced feedback generation using Gemini AI
 
 3. **Database Integration**
    - MongoDB Cloud integration
    - User data persistence
    - Video analysis storage
+   - Secure connection handling
 
 ## Setup Instructions
 
@@ -60,6 +62,8 @@ cd JagCoaching
    GOOGLE_GEMINI_API_KEY=your_key
    MONGO_DB_URI=your_mongodb_uri
    SECRET_KEY=your_secret_key
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
    ```
 
 4. Start the backend server:
@@ -251,3 +255,19 @@ src/frontend/
 
 
 # AI
+
+### Important Package Dependencies
+Make sure these key packages are properly installed:
+```bash
+pip install "PyJWT>=2.10.1"  # For JWT authentication
+pip install "passlib[bcrypt]>=1.7.4"  # For password hashing
+pip install "python-multipart>=0.0.9"  # For file uploads
+pip install "pydantic-settings>=2.8.1"  # For settings management
+```
+
+### Authentication System
+The system uses:
+- PyJWT for token generation and validation
+- Bcrypt for password hashing
+- OAuth2 password flow with Bearer tokens
+- Secure session management
