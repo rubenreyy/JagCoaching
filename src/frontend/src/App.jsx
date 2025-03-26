@@ -13,6 +13,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [accessToken, setAccessToken] = useState(null)
+  const [feedbackData, setFeedbackData] = useState(null)
 
   return (
     <div className="min-h-screen bg-[#EEEEEE]">
@@ -25,9 +26,14 @@ function App() {
         setAccessToken={setAccessToken}
       />
       {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} />}
-      {currentPage === 'upload' && <Upload setCurrentPage={setCurrentPage} />}
+      {currentPage === 'upload' && (
+        <Upload 
+          setCurrentPage={setCurrentPage} 
+          setFeedbackData={setFeedbackData} 
+        />
+      )}
       {currentPage === 'schedule' && <Schedule />}
-      {currentPage === 'feedback' && <Feedback />}
+      {currentPage === 'feedback' && <Feedback feedbackData={feedbackData} />}
       {currentPage === 'progress' && <ProgressPage setCurrentPage={setCurrentPage} />}
       {currentPage === 'login' && <Login setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
       {currentPage === 'signup' && <Signup setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
