@@ -93,6 +93,7 @@ async def add_cors_headers(request, call_next):
     # allow_content_types=["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
 # Index route
 
+app = FastAPI()
 
 @app.get("/")
 async def index():

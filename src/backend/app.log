@@ -105,3 +105,10 @@ TypeError: 'module' object is not callable
 2025-03-26 15:05:40,432 - routers.videos - INFO - Audio analysis completed
 2025-03-26 15:05:40,433 - routers.videos - INFO - Updating database with analysis results...
 2025-03-26 15:05:41,243 - routers.videos - INFO - Database updated successfully
+2025-03-30 17:47:32,220 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:53:22,587 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:54:05,077 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:54:27,240 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:57:10,413 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 18:04:46,188 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 18:09:48,375 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'

@@ -39,7 +39,6 @@ cd JagCoaching
 ```
 
 2. Set up Python environment (choose one method):
-
    **Method 1 - Using venv and pip:**
    ```bash
    python -m venv venv
