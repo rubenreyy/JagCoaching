@@ -1,3 +1,4 @@
+import LiveAnalysis from './components/live/LiveAnalysis';
 import { useState } from 'react'
 import Navbar from './components/layout/Navbar'
 import Dashboard from './components/dashboard/Dashboard'
@@ -14,6 +15,12 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [accessToken, setAccessToken] = useState(null)
   const [feedbackData, setFeedbackData] = useState(null)
+
+  const mockFeedback = {
+    eyeContact: 82,
+    facialExpressions: ['happy', 'engaged', 'neutral'],
+    posture: 'upright'
+  };  
 
   return (
     <div className="min-h-screen bg-[#EEEEEE]">
@@ -38,7 +45,8 @@ function App() {
       {currentPage === 'login' && <Login setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
       {currentPage === 'signup' && <Signup setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
       {currentPage === 'account' && <AccountPage setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
-    </div>
+      {currentPage === 'live' && <LiveAnalysis />}
+      </div>
   )
 }
 
