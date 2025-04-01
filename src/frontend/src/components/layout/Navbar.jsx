@@ -23,6 +23,14 @@ const Navbar = ({ currentPage, setCurrentPage, isLoggedIn, setIsLoggedIn }) => {
           
           {/* Navigation Links - Desktop */}
           <div className="hidden md:flex gap-8">
+          <button 
+            onClick={() => setCurrentPage('live')}
+            className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+              ${currentPage === 'live' ? 'text-primary' : ''}`}
+          >
+            Live Analysis
+          </button>
+
             <button 
               onClick={() => setCurrentPage('upload')}
               className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
@@ -88,6 +96,26 @@ const Navbar = ({ currentPage, setCurrentPage, isLoggedIn, setIsLoggedIn }) => {
       {isMenuOpen && (
         <div className="absolute top-[79px] left-0 w-full bg-[#030303] py-4 px-4 md:hidden">
           <div className="flex flex-col gap-4">
+          <button 
+            onClick={() => {
+              setCurrentPage('schedule')
+              setIsMenuOpen(false)
+            }}
+            className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+              ${currentPage === 'schedule' ? 'text-primary' : ''}`}
+          >
+            Schedule
+          </button>
+          <button
+            onClick={() => {
+              setCurrentPage('live')
+              setIsMenuOpen(false)
+            }}
+            className={`text-white text-xl font-mono font-light hover:text-primary transition-colors
+              ${currentPage === 'live' ? 'text-primary' : ''}`}
+          >
+            Live Analysis
+          </button>
             <button 
               onClick={() => {
                 setCurrentPage('upload')
