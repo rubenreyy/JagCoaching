@@ -1,22 +1,19 @@
-# Include the project root directory in the Python path if testing this file only
-# third-party imports
-
 import sys
 import os
+
+# Include the project root directory in the Python path if testing this file only
 if sys.path.count(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) == 0:
     sys.path.append(os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))))
-from config import settings
-from routers import auth_router , videos_router , users_router
-import uvicorn
-from fastapi import FastAPI 
-from fastapi.middleware.cors import CORSMiddleware
 
-# Built-in imports
+# Third-party and local imports
+from config import settings
+from routers import auth_router, videos_router, users_router
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pathlib import Path
-
-
 import dotenv
 import logging
 
@@ -29,50 +26,41 @@ logging.basicConfig(
         logging.FileHandler('app.log')
     ]
 )
-
-# Create logger instance
 logger = logging.getLogger(__name__)
 
-dotenv.load_dotenv("./env.development") # consolidated to one env folder
-
-# dotenv.load_dotenv("./src/backend/.env.development")
-
-# Local imports
-
+# Load .env
+dotenv.load_dotenv("./env.development")
 
 UPLOAD_DIR = settings.UPLOAD_FOLDER
-
 
 # Startup and shutdown event handlers for fastapi
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create necessary directories on startup."""
     try:
-        UPLOAD_DIR = Path(settings.UPLOAD_FOLDER)
-        VIDEO_DIR = UPLOAD_DIR / "videos"
-        AUDIO_DIR = VIDEO_DIR / "audio"
-        
-        for directory in [UPLOAD_DIR, VIDEO_DIR, AUDIO_DIR]:
+        upload_path = Path(settings.UPLOAD_FOLDER)
+        video_path = upload_path / "videos"
+        audio_path = video_path / "audio"
+
+        for directory in [upload_path, video_path, audio_path]:
             directory.mkdir(parents=True, exist_ok=True)
             logger.info(f"Created directory: {directory}")
-        
+
         yield
-        
         logger.info("Shutting down...")
     except Exception as e:
         logger.error(f"Error in lifespan: {str(e)}")
         raise
 
-
+# Initialize app
 app = FastAPI(lifespan=lifespan)
 
-# TODO: Include the routers in the main FastAPI application when database is working
-app.include_router(users_router)
-app.include_router(auth_router)
-app.include_router(videos_router)
+# Include routers with /api prefix
+app.include_router(users_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(videos_router, prefix="/api")
 
-
-# Added CORS middleware to allow cross-origin requests from the frontend
+# Middleware: CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5173"],
@@ -82,7 +70,7 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-# Add this before the CORS middleware
+# Optional manual headers
 @app.middleware("http")
 async def add_cors_headers(request, call_next):
     response = await call_next(request)
@@ -90,71 +78,28 @@ async def add_cors_headers(request, call_next):
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
-    # allow_content_types=["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
-# Index route
-
-app = FastAPI()
-
+# Root Index Route
 @app.get("/")
 async def index():
     return {"message": "Welcome to the JagCoaching API!"}
 
-# API route
-
-
+# API route info
 @app.get("/api/", response_description="API index route")
 async def apiroutes():
-    """Returns information about all available API endpoints."""
     return {
         "endpoints": [
-            {
-                "path": "/",
-                "method": "GET",
-                "description": "This index page showing all available endpoints and welcome message."
-            },
-            {
-                "path": "/api/upload/",
-                "method": "POST",
-                "description": "Upload a video file"
-            },
-            {
-                "path": "/api/process-audio/",
-                "method": "POST",
-                "description": "Extract and analyze speech from an uploaded video"
-            },
-            {
-                "path": "/api/login/",
-                "method": "POST",
-                "description": "Login to the application"
-            },
-            {
-                "path": "/api/logout/",
-                "method": "POST",
-                "description": "Logout the user from the application"
-            },
-            {
-                "path": "/api/register/",
-                "method": "POST",
-                "description": "Register a new user account"
-            },
-            {
-                "path": "/api/user/",
-                "method": "GET",
-                "description": "Check if the user is logged in"
-            },
-            {
-                "path": "/api/profile/",
-                "method": "GET",
-                "description": "Get profile data for the logged in user"
-            },
+            {"path": "/", "method": "GET", "description": "Welcome message"},
+            {"path": "/api/upload/", "method": "POST", "description": "Upload a video file"},
+            {"path": "/api/process-audio/", "method": "POST", "description": "Analyze uploaded video audio"},
+            {"path": "/api/login/", "method": "POST", "description": "User login"},
+            {"path": "/api/logout/", "method": "POST", "description": "User logout"},
+            {"path": "/api/register/", "method": "POST", "description": "Register a user"},
+            {"path": "/api/user/", "method": "GET", "description": "Get current user"},
+            {"path": "/api/profile/", "method": "GET", "description": "User profile info"}
         ],
         "version": "1.0"
     }
 
-
-
-
-
-# Run the FastAPI application
+# Run as script
 if __name__ == "__main__":
     uvicorn.run("main:app", port=8000, reload=True)
