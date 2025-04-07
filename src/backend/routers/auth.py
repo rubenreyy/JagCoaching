@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 load_dotenv("./.env.development")
 
 router = APIRouter(
-    prefix="/api",
     tags=["auth"],
     responses={404: {"description": "Not found"}, 422: {"description": "Validation Error"}, 401: {"description": "Unauthorized"}},
 )
