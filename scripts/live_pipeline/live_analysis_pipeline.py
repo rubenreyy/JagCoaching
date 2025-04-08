@@ -5,6 +5,8 @@ import threading
 from face_analysis import analyze_face
 from audio_analysis import record_audio, transcribe_audio
 from live_gemini import get_gemini_feedback
+from datetime import datetime
+import logging
 
 # Shared results
 face_result = {}
@@ -27,32 +29,31 @@ def run_audio_analysis():
     transcript = transcribe_audio(audio)
     audio_result = {"transcript": transcript}
 
-def run_analysis_once(cam):
-    global face_result, audio_result
-    face_result = {}
-    audio_result = {}
-
-    face_thread = threading.Thread(target=run_face_analysis, args=(cam,))
-    audio_thread = threading.Thread(target=run_audio_analysis)
-
-    face_thread.start()
-    audio_thread.start()
-
-    face_thread.join()
-    audio_thread.join()
-
-    emotion = face_result.get("emotion", "unknown")
-    eye_contact = face_result.get("eye_contact", "unknown")
-    transcript = audio_result.get("transcript", "")
-
-    gemini_data = get_gemini_feedback(emotion, eye_contact, transcript)
-
-    return {
-        "emotion": emotion,
-        "eye_contact": eye_contact,
-        "transcript": transcript,
-        "gemini_feedback": gemini_data
-    }
+def run_analysis_once(frame):
+    """Run analysis on a single frame"""
+    try:
+        # Run face analysis
+        emotion, eye_contact = analyze_face(frame)
+        
+        # Run audio analysis (if audio data is available)
+        transcript = ""  # This will be handled separately through the WebSocket
+        
+        # Get Gemini feedback
+        gemini_data = get_gemini_feedback(emotion, eye_contact, transcript)
+        
+        return {
+            "emotion": emotion,
+            "eye_contact": eye_contact,
+            "transcript": transcript,
+            "gemini_feedback": gemini_data,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Analysis error: {e}")
+        return {
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 def run_loop():
     cam = cv2.VideoCapture(0)
