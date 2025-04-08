@@ -20,6 +20,22 @@ AI-powered presentation analysis tool by Ruben Reyes, Chris Nastasi, Angelo Badi
    - Video analysis storage
    - Secure connection handling
 
+## New Features Added
+
+### Real-Time Analysis
+- Live video streaming via WebSocket
+- Real-time audio processing
+- Instant feedback generation
+- Performance monitoring
+- Network status tracking
+
+### Error Handling & Monitoring
+- Comprehensive error boundaries
+- Performance metrics tracking
+- Network condition monitoring
+- Automatic error recovery
+- Session persistence
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -84,6 +100,37 @@ npm install
 npm run dev
 ```
 
+### WebSocket Configuration
+
+1. Enable WebSocket in your environment:
+```env
+ENABLE_WEBSOCKET=true
+WEBSOCKET_PORT=8001
+```
+
+2. Configure CORS for WebSocket:
+```env
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+```
+
+### Performance Monitoring
+
+1. Enable monitoring:
+```env
+ENABLE_MONITORING=true
+PROMETHEUS_PORT=9090
+```
+
+2. Monitor metrics at:
+- Frontend Performance: http://localhost:5173/metrics
+- Backend Metrics: http://localhost:9090/metrics
+
+### Network Requirements
+- Minimum upload speed: 1 Mbps
+- Minimum download speed: 2 Mbps
+- Stable connection for WebSocket
+- Low latency for real-time analysis
+
 ### Accessing the Application
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8000
@@ -108,6 +155,54 @@ npm run dev
    - Verify MongoDB Atlas whitelist includes your IP
    - Check connection string format
    - Ensure network connectivity
+
+#### WebSocket Connection Issues
+1. Check WebSocket server status:
+```bash
+curl -N -H "Connection: Upgrade" \
+  -H "Upgrade: websocket" \
+  -H "Host: localhost:8001" \
+  -H "Origin: http://localhost:5173" \
+  "ws://localhost:8001"
+```
+
+2. Verify network conditions:
+```bash
+ping localhost -c 4
+```
+
+#### Performance Issues
+1. Monitor system resources:
+```bash
+top  # or htop if installed
+```
+
+2. Check application metrics:
+- Open browser dev tools
+- Navigate to Performance tab
+- Record page load and interactions
+
+#### Camera/Microphone Access
+1. Check browser permissions
+2. Verify device connections
+3. Test devices in browser settings
+
+### Error Recovery Procedures
+
+1. Connection Loss
+- Automatic reconnection attempts
+- Session state preservation
+- Data recovery when possible
+
+2. Performance Degradation
+- Automatic quality adjustment
+- Resource usage optimization
+- Background task throttling
+
+3. Device Failures
+- Fallback to alternative devices
+- Graceful degradation
+- User notification system
 
 ### Using the Application
 
@@ -270,3 +365,41 @@ The system uses:
 - Bcrypt for password hashing
 - OAuth2 password flow with Bearer tokens
 - Secure session management
+
+## Testing Different Network Conditions
+
+### Chrome DevTools
+1. Open DevTools (F12)
+2. Go to Network tab
+3. Use network throttling presets:
+   - Fast 3G
+   - Slow 3G
+   - Offline
+
+### Real Network Testing
+1. Test on different networks:
+   - WiFi
+   - Mobile data
+   - Public networks
+
+2. Monitor connection quality:
+   - Check Network Monitor component
+   - Observe WebSocket stability
+   - Monitor error rates
+
+## Performance Optimization Tips
+
+1. Video Stream
+   - Reduce resolution if needed
+   - Adjust frame rate
+   - Use compression
+
+2. Audio Stream
+   - Adjust chunk size
+   - Modify bitrate
+   - Balance quality vs performance
+
+3. Real-time Analysis
+   - Enable/disable features based on performance
+   - Implement progressive enhancement
+   - Use lazy loading where possible

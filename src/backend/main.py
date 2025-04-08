@@ -7,9 +7,9 @@ if sys.path.count(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspat
     sys.path.append(os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))))
 from config import settings
-from routers import auth_router , videos_router , users_router
+from routers import auth_router , videos_router , users_router, live_router
 import uvicorn
-from fastapi import FastAPI 
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 # Built-in imports
@@ -70,6 +70,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(videos_router)
+app.include_router(live_router.router)
 
 
 # Added CORS middleware to allow cross-origin requests from the frontend
@@ -79,7 +80,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
+    allow_websockets=True
 )
 
 # Add this before the CORS middleware
