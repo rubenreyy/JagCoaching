@@ -14,6 +14,7 @@ from models.user_models import TokenData, UserLogin, UserResponse, User
 from config import settings
 import secrets
 import hashlib
+from uuid import uuid4  # 🔒 Added for session IDs
 
 # Load environment variables
 load_dotenv("./.env.development")
@@ -66,6 +67,28 @@ def save_refresh_token_to_db(user_id: str, refresh_token: str, device_info: Opti
         "device_info": device_info,
         "created_at": datetime.utcnow()
     })
+
+# Angelo Added April 8 // Phase 4: Session Helpers
+def create_user_session(user_id: str, ip_address: Optional[str] = None, device_info: Optional[dict] = None):
+    session_data = {
+        "session_id": str(uuid4()),
+        "user_id": user_id,
+        "ip_address": ip_address,
+        "device_info": device_info,
+        "created_at": datetime.utcnow(),
+        "last_active": datetime.utcnow()
+    }
+    DB_CONNECTION.create_session("JagCoaching", session_data)
+    return session_data["session_id"]
+
+def get_user_sessions(user_id: str):
+    return DB_CONNECTION.get_sessions_by_user("JagCoaching", user_id)
+
+def terminate_session(session_id: str):
+    return DB_CONNECTION.terminate_session("JagCoaching", session_id)
+
+def terminate_all_user_sessions(user_id: str):
+    return DB_CONNECTION.terminate_all_sessions("JagCoaching", user_id)
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
     """ Get the current user from the given token."""
