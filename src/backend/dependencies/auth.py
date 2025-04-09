@@ -31,6 +31,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token", auto_error=False
 router = APIRouter()
 DB_CONNECTION = CloudDBController()
 
+# PHASE 4: MAX SESSION LIMIT
+MAX_SESSIONS_PER_USER = 5
+
 # Password Hashing & Verification
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
@@ -67,8 +70,17 @@ def save_refresh_token_to_db(user_id: str, refresh_token: str, device_info: Opti
         "created_at": datetime.utcnow()
     })
 
+# Phase 4: Enforce Max Sessions Per User
+def enforce_max_sessions(user_id: str):
+    sessions = DB_CONNECTION.get_sessions_by_user("JagCoaching", user_id)
+    if len(sessions) >= MAX_SESSIONS_PER_USER:
+        sessions_sorted = sorted(sessions, key=lambda x: x.get("created_at"))
+        for old_session in sessions_sorted[:len(sessions) - MAX_SESSIONS_PER_USER + 1]:
+            DB_CONNECTION.terminate_session("JagCoaching", old_session["session_id"])
+
 # Phase 4: Enhanced Session Helpers
 def create_user_session(user_id: str, ip_address: Optional[str] = None, device_info: Optional[dict] = None):
+    enforce_max_sessions(user_id)  # enforce before session creation
     session_data = {
         "session_id": str(uuid4()),
         "user_id": user_id,
@@ -99,7 +111,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Phase 3: Blacklist/Revoked Token Check
         revoked_entry = DB_CONNECTION.is_token_revoked("JagCoaching", token)
         if revoked_entry:
             reason = revoked_entry.get("reason", "revoked")
