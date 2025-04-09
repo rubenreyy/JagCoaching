@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta, datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Request  # Added Request
+from fastapi import APIRouter, Depends, HTTPException, status, Body, Request  # Phase 4: Request added
 from fastapi.security import OAuth2PasswordRequestForm
 from models.user_models import UserCreate, UserInDB, UserLogin, Token
 from models.schemas import RefreshRequest, BlacklistRequest  # Phase 3
@@ -15,8 +15,8 @@ from dependencies.auth import (
     create_refresh_token,
     hash_refresh_token,
     save_refresh_token_to_db,
-    create_user_session,  # Phase 4
-    terminate_all_user_sessions  # Phase 4
+    create_user_session,               # Phase 4
+    terminate_all_user_sessions        # Phase 4
 )
 from database.cloud_db_controller import CloudDBController
 from dotenv import load_dotenv
@@ -34,6 +34,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 DB_CONNECTION = CloudDBController()
+
 
 @router.post("/register/")
 async def register(form: UserLogin):
@@ -67,7 +68,7 @@ async def register(form: UserLogin):
 
 @router.post("/auth/token/", response_model=Token)
 async def login_for_access_token(
-    request: Request,  # For IP and headers
+    request: Request,  # Phase 4: Access request for IP/device info
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
     try:
@@ -87,7 +88,7 @@ async def login_for_access_token(
         refresh_token = create_refresh_token()
         save_refresh_token_to_db(user_id=str(user["_id"]), refresh_token=refresh_token)
 
-        # Phase 4: Create a session upon login
+        # Phase 4: Create session entry
         ip_address = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
         device_info = {"user_agent": user_agent}
@@ -105,6 +106,7 @@ async def login_for_access_token(
     finally:
         if DB_CONNECTION.client:
             DB_CONNECTION.client.close()
+
 
 @router.post("/auth/token/refresh", response_model=Token)
 async def refresh_token(request: RefreshRequest = Body(...)):
@@ -137,6 +139,7 @@ async def refresh_token(request: RefreshRequest = Body(...)):
         if DB_CONNECTION.client:
             DB_CONNECTION.client.close()
 
+
 @router.post("/api/logout/")
 async def logout(current_user: UserInDB = Depends(get_current_user), token: str = Depends(oauth2_scheme)):
     try:
@@ -145,14 +148,15 @@ async def logout(current_user: UserInDB = Depends(get_current_user), token: str 
         expires_at = datetime.fromtimestamp(exp)
         DB_CONNECTION.revoke_token("JagCoaching", token=token, expires_at=expires_at, reason="user_logout")
 
-        # Phase 4: End all user sessions on logout
+        # Phase 4: End all active sessions for the user
         terminate_all_user_sessions(str(current_user.id))
 
         return {"status": "success", "message": "Logout successful!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Logout failed: {str(e)}")
 
-# Phase 3: Admin route to blacklist a token
+
+# Phase 3: Admin route for manual blacklisting
 @router.post("/auth/token/blacklist")
 async def blacklist_token(request: BlacklistRequest = Body(...)):
     try:
