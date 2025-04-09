@@ -14,7 +14,7 @@ from models.user_models import TokenData, UserLogin, UserResponse, User
 from config import settings
 import secrets
 import hashlib
-from uuid import uuid4  # 🔒 Added for session IDs
+from uuid import uuid4  # Added for session IDs
 
 # Load environment variables
 load_dotenv("./.env.development")
@@ -31,7 +31,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token", auto_error=False
 router = APIRouter()
 DB_CONNECTION = CloudDBController()
 
-# Angelo Updated April 1: Utility Functions
+# Password Hashing & Verification
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         return pwd_context.verify(plain_password, hashed_password)
@@ -40,17 +40,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 def get_password_hash(password):
-    """ Hash the given password."""
     return pwd_context.hash(password)
 
+# Token Creation
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """ Create an access token with the given data and expiration time."""
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# Angelo Updated April 1 // Phase 1: Refresh Token Helpers
+# Refresh Token Helpers
 def create_refresh_token():
     return secrets.token_urlsafe(32)
 
@@ -68,7 +67,7 @@ def save_refresh_token_to_db(user_id: str, refresh_token: str, device_info: Opti
         "created_at": datetime.utcnow()
     })
 
-# Angelo Added April 8 // Phase 4: Session Helpers
+# Phase 4: Enhanced Session Helpers
 def create_user_session(user_id: str, ip_address: Optional[str] = None, device_info: Optional[dict] = None):
     session_data = {
         "session_id": str(uuid4()),
@@ -90,8 +89,8 @@ def terminate_session(session_id: str):
 def terminate_all_user_sessions(user_id: str):
     return DB_CONNECTION.terminate_all_sessions("JagCoaching", user_id)
 
+# Current User Token Logic (Phase 2 + 3)
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    """ Get the current user from the given token."""
     print("getting user: ")
     print(token)
     credentials_exception = HTTPException(
@@ -100,7 +99,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Angelo Updated April 8 // Phase 2 + 3: Check for revoked OR blacklisted token
+        # Phase 3: Blacklist/Revoked Token Check
         revoked_entry = DB_CONNECTION.is_token_revoked("JagCoaching", token)
         if revoked_entry:
             reason = revoked_entry.get("reason", "revoked")
@@ -119,17 +118,16 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except jwt.PyJWTError as exc:
         print("jwt error")
         raise credentials_exception from exc
+
     user = get_user(db=DB_CONNECTION, username=token_data.username)
     return user
 
 def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
-    """ Get the current active user."""
     if current_user is None:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 def get_user(db: CloudDBController, username: str):
-    """ Get the user from the database."""
     db.connect()
     user = db.find_document(db_name="JagCoaching", collection_name="users", filter_dict={"username": username})
     if user is None:
