@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 import bcrypt
-bcrypt.__about__ = bcrypt # some bug with passlib and bcrypt
+bcrypt.__about__ = bcrypt  # some bug with passlib and bcrypt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 from database.cloud_db_controller import CloudDBController
@@ -77,8 +77,13 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Angelo Updated April 1 //  Phase 2: Check for revoked token
-        if DB_CONNECTION.is_token_revoked("JagCoaching", token):
+        # Angelo Updated April 8 // Phase 2 + 3: Check for revoked OR blacklisted token
+        revoked_entry = DB_CONNECTION.is_token_revoked("JagCoaching", token)
+        if revoked_entry:
+            reason = revoked_entry.get("reason", "revoked")
+            token_type = revoked_entry.get("type", "revoked")
+            if reason == "blacklisted" or token_type == "blacklist":
+                raise HTTPException(status_code=403, detail="Token blacklisted. Access denied.")
             raise HTTPException(status_code=401, detail="Token has been revoked")
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
