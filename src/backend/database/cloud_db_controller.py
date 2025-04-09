@@ -59,7 +59,9 @@ class CloudDBController:
     def count_documents(self, db_name, collection_name, filter_dict=None):
         return self.client[db_name][collection_name].count_documents(filter_dict or {})
 
-    # April 1 // Phase 1: Refresh Token Handling Methods
+    # -------------------
+    # Phase 1: Refresh Tokens
+    # -------------------
     def save_refresh_token(self, db_name, token_data):
         return self.client[db_name]["refresh_tokens"].insert_one(token_data)
 
@@ -72,7 +74,9 @@ class CloudDBController:
     def delete_all_refresh_tokens_for_user(self, db_name, user_id):
         return self.client[db_name]["refresh_tokens"].delete_many({"user_id": user_id})
 
-    # April 1 // Phase 2: Token Revocation Methods
+    # -------------------
+    # Phase 2: Revocation
+    # -------------------
     def revoke_token(self, db_name, token, expires_at, reason=None):
         return self.client[db_name]["revoked_tokens"].insert_one({
             "token": token,
@@ -85,7 +89,9 @@ class CloudDBController:
     def is_token_revoked(self, db_name, token):
         return self.client[db_name]["revoked_tokens"].find_one({"token": token})
 
-    # April 2 // Phase 3: Token Blacklisting Methods
+    # -------------------
+    # Phase 3: Blacklisting
+    # -------------------
     def blacklist_token(self, db_name, token, expires_at, reason="blacklisted"):
         return self.client[db_name]["revoked_tokens"].insert_one({
             "token": token,
@@ -102,21 +108,20 @@ class CloudDBController:
             "type": "blacklist"
         })
 
-    #  April 8 // Phase 4: Session Management Methods
+    # -------------------
+    # Phase 4: Session Management
+    # -------------------
     def create_session(self, db_name, session_data):
         return self.client[db_name]["sessions"].insert_one(session_data)
 
-    def get_sessions_by_user(self, db_name, user_id):
+    def get_sessions_for_user(self, db_name, user_id):
         return list(self.client[db_name]["sessions"].find({"user_id": user_id}))
 
-    def terminate_session(self, db_name, session_id):
-        return self.client[db_name]["sessions"].delete_one({"_id": session_id})
+    def delete_session(self, db_name, session_id):
+        return self.client[db_name]["sessions"].delete_one({"session_id": session_id})
 
-    def terminate_all_sessions(self, db_name, user_id):
+    def delete_all_sessions_for_user(self, db_name, user_id):
         return self.client[db_name]["sessions"].delete_many({"user_id": user_id})
-
-    def cleanup_expired_sessions(self, db_name, cutoff_time):
-        return self.client[db_name]["sessions"].delete_many({"last_active": {"$lt": cutoff_time}})
 
 
 class CloudDBInitializer(CloudDBController):
