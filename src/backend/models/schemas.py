@@ -46,3 +46,20 @@ class TokenInfo(BaseModel):
     user_id: str
     device_info: Optional[dict] = None
     ip_address: Optional[str] = None
+
+# Phase 4: Session Management Models
+class SessionCreate(BaseModel):
+    user_id: str
+    device_info: Optional[dict] = None
+    ip_address: Optional[str] = None
+
+class SessionInfo(BaseModel):
+    session_id: str
+    user_id: str
+    created_at: datetime
+    last_active: datetime
+    device_info: Optional[dict] = None
+    ip_address: Optional[str] = None
+
+class SessionTerminateRequest(BaseModel):
+    session_id: str
