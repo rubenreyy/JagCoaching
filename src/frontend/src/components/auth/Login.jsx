@@ -5,16 +5,25 @@ const Login = ({ setCurrentPage, setIsLoggedIn }) => {
     email: "",
     password: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
     console.log("Attempting to login with:", formData.email);
     
     const formBody = new URLSearchParams();
     formBody.append('username', formData.email);
     formBody.append('password', formData.password);
     
-    fetch("http://localhost:8000/api/auth/token/", {
+    fetch("http://localhost:8000/api/auth/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -38,15 +47,26 @@ const Login = ({ setCurrentPage, setIsLoggedIn }) => {
     })
     .catch((error) => {
       console.error("Login error:", error);
-      alert(`Login failed: ${error.message}`);
+      setError(error.message);
+    })
+    .finally(() => {
+      setIsLoading(false);
     });
   };
 
   return (
-    <div className="min-h-[calc(100vh-79px)] bg-[#EEEEEE] flex items-center justify-center px-4">
-      <div className="w-full max-w-[480px] bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold font-mono text-center mb-8">Login</h1>
-
+    <div className="flex min-h-[80vh] items-center justify-center">
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
+        <h1 className="text-3xl font-bold font-mono text-center mb-6">
+          Log In
+        </h1>
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label
@@ -57,13 +77,13 @@ const Login = ({ setCurrentPage, setIsLoggedIn }) => {
             </label>
             <input
               id="email"
+              name="email"
               type="email"
               required
-              className="w-full px-3 py-2 border rounded-md font-mono text-[#030303] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md font-mono"
+              placeholder="your.email@example.com"
             />
           </div>
 
@@ -76,21 +96,25 @@ const Login = ({ setCurrentPage, setIsLoggedIn }) => {
             </label>
             <input
               id="password"
+              name="password"
               type="password"
               required
-              className="w-full px-3 py-2 border rounded-md font-mono text-[#030303] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md font-mono"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#CCCCCC] hover:bg-primary text-[#030303] hover:text-white font-mono font-semibold py-2 rounded-[22.5px] transition-colors"
+            disabled={isLoading}
+            className={`w-full py-2 px-4 rounded-[22.5px] font-mono font-semibold transition-colors ${
+              isLoading
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-[#030303] text-white hover:bg-primary"
+            }`}
           >
-            Login
+            {isLoading ? "Logging in..." : "Log In"}
           </button>
         </form>
 

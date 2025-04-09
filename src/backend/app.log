@@ -112,3 +112,59 @@ TypeError: 'module' object is not callable
 2025-03-30 17:57:10,413 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
 2025-03-30 18:04:46,188 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
 2025-03-30 18:09:48,375 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-04-09 16:57:04,487 - main - INFO - Created directory: uploads
+2025-04-09 16:57:04,487 - main - INFO - Created directory: uploads/videos
+2025-04-09 16:57:04,488 - main - INFO - Created directory: uploads/videos/audio
+2025-04-09 16:57:42,041 - main - INFO - Shutting down...
+2025-04-09 16:57:52,695 - main - INFO - Created directory: uploads
+2025-04-09 16:57:52,695 - main - INFO - Created directory: uploads/videos
+2025-04-09 16:57:52,695 - main - INFO - Created directory: uploads/videos/audio
+2025-04-09 16:59:34,049 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 3d88c4b9-57b1-4726-92ab-aa2606d7b560
+2025-04-09 16:59:44,479 - routers.live_router - INFO - Client disconnected from session 3d88c4b9-57b1-4726-92ab-aa2606d7b560
+2025-04-09 16:59:44,488 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 3d88c4b9-57b1-4726-92ab-aa2606d7b560
+2025-04-09 16:59:45,490 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 70675d1d-e2a8-4520-ab5f-10810e2e984d
+2025-04-09 16:59:45,766 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 70675d1d-e2a8-4520-ab5f-10810e2e984d
+2025-04-09 16:59:57,519 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 70675d1d-e2a8-4520-ab5f-10810e2e984d
+2025-04-09 16:59:57,520 - routers.live_router - INFO - Client disconnected from session 70675d1d-e2a8-4520-ab5f-10810e2e984d
+2025-04-09 16:59:58,537 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 0f75fc84-3cb6-492c-8e15-c68a08d3a9dd
+2025-04-09 17:00:06,596 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 0f75fc84-3cb6-492c-8e15-c68a08d3a9dd
+2025-04-09 17:00:08,070 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 0f75fc84-3cb6-492c-8e15-c68a08d3a9dd
+2025-04-09 17:00:08,071 - routers.live_router - INFO - Client disconnected from session 0f75fc84-3cb6-492c-8e15-c68a08d3a9dd
+2025-04-09 17:00:09,080 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:00:15,496 - routers.live_router - ERROR - Keep-alive error: 'last_ping'
+2025-04-09 17:00:28,539 - routers.live_router - ERROR - Keep-alive error: 'last_ping'
+2025-04-09 17:01:09,087 - routers.live_router - WARNING - Session 08324452-c3ae-4108-b624-5bf994e5b9c7 timed out
+2025-04-09 17:01:09,095 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:01:09,096 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:01:10,110 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:02:10,117 - routers.live_router - WARNING - Session 08324452-c3ae-4108-b624-5bf994e5b9c7 timed out
+2025-04-09 17:02:10,126 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:02:10,134 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:02:11,139 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:03:11,147 - routers.live_router - WARNING - Session 08324452-c3ae-4108-b624-5bf994e5b9c7 timed out
+2025-04-09 17:03:11,152 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:03:11,157 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:03:12,164 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:04:12,172 - routers.live_router - WARNING - Session 08324452-c3ae-4108-b624-5bf994e5b9c7 timed out
+2025-04-09 17:04:12,182 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:04:12,184 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:04:13,199 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:05:13,207 - routers.live_router - WARNING - Session 08324452-c3ae-4108-b624-5bf994e5b9c7 timed out
+2025-04-09 17:05:13,218 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:05:13,219 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:05:14,248 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:06:14,278 - routers.live_router - WARNING - Session 08324452-c3ae-4108-b624-5bf994e5b9c7 timed out
+2025-04-09 17:06:14,294 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:06:14,294 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:06:15,306 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:06:58,788 - routers.live_router - INFO - Client disconnected from session 08324452-c3ae-4108-b624-5bf994e5b9c7
+2025-04-09 17:06:58,827 - routers.live_router - INFO - Client disconnected from session 0f75fc84-3cb6-492c-8e15-c68a08d3a9dd
+2025-04-09 17:06:58,828 - routers.live_router - INFO - Client disconnected from session 70675d1d-e2a8-4520-ab5f-10810e2e984d
+2025-04-09 17:07:31,390 - src.backend.ws_manager.ws_manager - INFO - Client connected to session e4ca1973-c730-4986-817c-bdc30cd4219d
+2025-04-09 17:07:39,859 - routers.live_router - INFO - Client disconnected from session e4ca1973-c730-4986-817c-bdc30cd4219d
+2025-04-09 17:07:39,865 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session e4ca1973-c730-4986-817c-bdc30cd4219d
+2025-04-09 17:07:40,871 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 7aa989d9-5d70-4952-b592-d3c6bb98c126
+2025-04-09 17:08:40,882 - routers.live_router - WARNING - Session 7aa989d9-5d70-4952-b592-d3c6bb98c126 timed out
+2025-04-09 17:08:40,888 - src.backend.ws_manager.ws_manager - INFO - Client disconnected from session 7aa989d9-5d70-4952-b592-d3c6bb98c126
+2025-04-09 17:08:40,889 - routers.live_router - INFO - Client disconnected from session 7aa989d9-5d70-4952-b592-d3c6bb98c126
+2025-04-09 17:08:41,903 - src.backend.ws_manager.ws_manager - INFO - Client connected to session 7aa989d9-5d70-4952-b592-d3c6bb98c126

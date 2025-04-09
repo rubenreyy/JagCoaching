@@ -22,7 +22,7 @@ ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES","30"))
 DB_CONNECTION = CloudDBController()
 
-@router.post("/register/")
+@router.post("/register", response_model=dict)
 async def register(form: UserLogin):
     """ Register a new user account """
     try:
@@ -77,7 +77,7 @@ async def register(form: UserLogin):
 
 
 
-@router.post("/auth/token/", response_model=Token)
+@router.post("/auth/token", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     """Get access token for user login"""
     try:
