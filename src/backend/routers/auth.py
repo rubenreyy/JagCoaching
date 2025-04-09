@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from models.user_models import UserCreate, UserInDB, UserLogin, Token
-from models.schemas import RefreshRequest
+from models.schemas import RefreshRequest, BlacklistRequest  # 🔥 Phase 3
 from dependencies.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
@@ -12,7 +12,6 @@ from dependencies.auth import (
     create_access_token,
     get_password_hash,
     verify_password,
-# Updated by Angelo for token management
     create_refresh_token,
     hash_refresh_token,
     save_refresh_token_to_db
@@ -36,7 +35,6 @@ DB_CONNECTION = CloudDBController()
 
 @router.post("/register/")
 async def register(form: UserLogin):
-    """ Register a new user account """
     try:
         DB_CONNECTION.connect()
         existing_user = DB_CONNECTION.find_document("JagCoaching", "users", {"email": form.email})
@@ -81,7 +79,6 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(data={"sub": user["email"]}, expires_delta=access_token_expires)
-# Updated by Angelo to include both access_token and refresh_token
         refresh_token = create_refresh_token()
         save_refresh_token_to_db(user_id=str(user["_id"]), refresh_token=refresh_token)
 
@@ -98,7 +95,6 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         if DB_CONNECTION.client:
             DB_CONNECTION.client.close()
 
-# Updated by Angelo to include a new login endpoint 
 @router.post("/auth/token/refresh", response_model=Token)
 async def refresh_token(request: RefreshRequest = Body(...)):
     try:
@@ -110,7 +106,6 @@ async def refresh_token(request: RefreshRequest = Body(...)):
             raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
         user_id = stored["user_id"]
-
         DB_CONNECTION.delete_refresh_token("JagCoaching", token_hash)
 
         new_refresh_token = create_refresh_token()
@@ -131,8 +126,6 @@ async def refresh_token(request: RefreshRequest = Body(...)):
         if DB_CONNECTION.client:
             DB_CONNECTION.client.close()
 
-
-# Updated by Angelo April 2 // Phase 2: Logout now revokes access token
 @router.post("/api/logout/")
 async def logout(current_user: UserInDB = Depends(get_current_user), token: str = Depends(oauth2_scheme)):
     try:
@@ -143,3 +136,17 @@ async def logout(current_user: UserInDB = Depends(get_current_user), token: str 
         return {"status": "success", "message": "Logout successful!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Logout failed: {str(e)}")
+
+# Phase 3: Admin route to blacklist a token
+@router.post("/auth/token/blacklist")
+async def blacklist_token(request: BlacklistRequest = Body(...)):
+    try:
+        payload = jwt.decode(request.token, SECRET_KEY, algorithms=[ALGORITHM])
+        exp = payload.get("exp")
+        expires_at = datetime.fromtimestamp(exp)
+        DB_CONNECTION.blacklist_token("JagCoaching", token=request.token, expires_at=expires_at, reason=request.reason)
+        return {"status": "success", "message": "Token has been blacklisted."}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Token already expired.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to blacklist token: {str(e)}")
