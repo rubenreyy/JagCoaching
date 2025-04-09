@@ -1,7 +1,7 @@
 import os
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status 
+from fastapi import APIRouter, Depends, HTTPException, status, Path  # Added Path for session ID routing
 
 from database.cloud_db_controller import CloudDBController
 from dependencies.auth import (
@@ -9,7 +9,8 @@ from dependencies.auth import (
     get_current_active_user,
     get_current_user,
     oauth2_scheme,
-    get_user_sessions
+    get_user_sessions,         
+    terminate_session           
 )
 
 from models.user_models import UserCreate, UserUpdate, UserInDB, UserResponse, User
@@ -60,3 +61,20 @@ async def list_user_sessions(current_user: dict = Depends(get_current_user)):
         return {"status": "success", "sessions": sessions}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve sessions: {str(e)}")
+
+# Terminate a specific session by session ID
+@router.delete("/sessions/{session_id}", response_description="Terminate a session")
+async def terminate_user_session(
+    session_id: str = Path(..., description="Session ID to terminate"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Terminates a specific session by session ID for the current user.
+    """
+    try:
+        result = terminate_session(session_id)
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Session not found or already terminated.")
+        return {"status": "success", "message": f"Session {session_id} terminated."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to terminate session: {str(e)}")
