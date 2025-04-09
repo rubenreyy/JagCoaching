@@ -20,29 +20,26 @@ const CameraStream = () => {
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const tracks = videoRef.current.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
+        tracks.forEach((track) => track.stop());
       }
     };
   }, []);
 
   return (
-    <div
-      className="w-full max-w-md p-1 rounded-xl shadow-xl bg-cover bg-center"
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className="rounded-xl shadow-xl object-cover"
       style={{
-        backgroundImage: "url('/assets/background.jpg')",
-        backgroundColor: '#000',
+        width: '100%',
+        maxWidth: '900px',
+        aspectRatio: '4 / 3',
+        backgroundColor: 'transparent',
+        border: 'none',
       }}
-    >
-      <div className="rounded-lg overflow-hidden backdrop-blur-sm bg-black/70">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-auto"
-        />
-      </div>
-    </div>
+    />
   );
 };
 
