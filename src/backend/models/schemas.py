@@ -36,6 +36,11 @@ class TokenData(BaseModel):
 class RefreshRequest(BaseModel):
     refresh_token: str
 
+# Phase 3: Blacklist Token Request Model
+class BlacklistRequest(BaseModel):
+    token: str
+    reason: Optional[str] = "manual_blacklist"
+
 # Session Tracking 
 class TokenInfo(BaseModel):
     user_id: str
