@@ -1,7 +1,6 @@
 import os
 from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, status, Path  # Added Path for session ID routing
+from fastapi import APIRouter, Depends, HTTPException, status, Path  # Added Path
 
 from database.cloud_db_controller import CloudDBController
 from dependencies.auth import (
@@ -9,8 +8,8 @@ from dependencies.auth import (
     get_current_active_user,
     get_current_user,
     oauth2_scheme,
-    get_user_sessions,         
-    terminate_session           
+    get_user_sessions,          #  Phase 4
+    terminate_session           #  Phase 4
 )
 
 from models.user_models import UserCreate, UserUpdate, UserInDB, UserResponse, User
@@ -33,13 +32,11 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-# Get profile data for the logged in user
+# Existing: Get profile data
 @router.get("/profile/", response_description="Get profile data for the logged in user")
 def get_profile(token: Annotated[str, Depends(get_current_active_user)]):
-    """Returns the profile data for the currently logged in user."""
     print(token)
     user = get_current_active_user(token)
-
     return {
         "status": "success",
         "user": {
@@ -49,12 +46,9 @@ def get_profile(token: Annotated[str, Depends(get_current_active_user)]):
         }
     }
 
-# List active sessions for the current user
+# Phase 4: List all sessions
 @router.get("/sessions", response_description="List all active sessions for the current user")
 async def list_user_sessions(current_user: dict = Depends(get_current_user)):
-    """
-    Returns all active sessions (IP, device info, timestamps) for the current user.
-    """
     try:
         user_id = str(current_user["_id"])
         sessions = get_user_sessions(user_id)
@@ -62,15 +56,12 @@ async def list_user_sessions(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve sessions: {str(e)}")
 
-# Terminate a specific session by session ID
+# Phase 4: Terminate a session
 @router.delete("/sessions/{session_id}", response_description="Terminate a session")
 async def terminate_user_session(
     session_id: str = Path(..., description="Session ID to terminate"),
     current_user: dict = Depends(get_current_user)
 ):
-    """
-    Terminates a specific session by session ID for the current user.
-    """
     try:
         result = terminate_session(session_id)
         if result.deleted_count == 0:
