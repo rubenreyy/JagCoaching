@@ -103,7 +103,7 @@ class RefreshToken(BaseModel):
     expires_at: datetime
     device_info: Optional[dict] = None
 
-# Session Model 
+# Phase 4: Session Model (updated April 2)
 class Session(BaseModel):
     session_id: str
     user_id: str
