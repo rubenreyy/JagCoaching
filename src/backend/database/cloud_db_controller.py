@@ -12,7 +12,6 @@ class CloudDBController:
     """Class to handle MongoDB operations"""
 
     def __init__(self):
-        # Get the URI from the environment variables
         db_cloud_username = os.getenv("DB_CLOUD_USERNAME")
         db_cloud_password = os.getenv("DB_CLOUD_PASSWORD")
         self.uri = os.getenv(
@@ -20,7 +19,6 @@ class CloudDBController:
         self.client = MongoClient(self.uri, server_api=ServerApi('1'), connect=False)
 
     def connect(self):
-        """Connect to the MongoDB client"""
         self.client = MongoClient(self.uri, server_api=ServerApi('1'))
         try:
             self.client.admin.command('ping')
@@ -81,7 +79,7 @@ class CloudDBController:
             "expires_at": expires_at,
             "reason": reason,
             "revoked_at": datetime.utcnow(),
-            "type": "revoked"  # Phase 3 addition: distinguish type
+            "type": "revoked"
         })
 
     def is_token_revoked(self, db_name, token):
@@ -96,13 +94,29 @@ class CloudDBController:
             "revoked_at": datetime.utcnow(),
             "type": "blacklist"
         })
-    # April 8 // Phase 3: Token Blacklisting Methods
+
     def cleanup_expired_blacklist_tokens(self, db_name):
         now = datetime.utcnow()
         return self.client[db_name]["revoked_tokens"].delete_many({
             "expires_at": {"$lte": now},
             "type": "blacklist"
         })
+
+    #  April 8 // Phase 4: Session Management Methods
+    def create_session(self, db_name, session_data):
+        return self.client[db_name]["sessions"].insert_one(session_data)
+
+    def get_sessions_by_user(self, db_name, user_id):
+        return list(self.client[db_name]["sessions"].find({"user_id": user_id}))
+
+    def terminate_session(self, db_name, session_id):
+        return self.client[db_name]["sessions"].delete_one({"_id": session_id})
+
+    def terminate_all_sessions(self, db_name, user_id):
+        return self.client[db_name]["sessions"].delete_many({"user_id": user_id})
+
+    def cleanup_expired_sessions(self, db_name, cutoff_time):
+        return self.client[db_name]["sessions"].delete_many({"last_active": {"$lt": cutoff_time}})
 
 
 class CloudDBInitializer(CloudDBController):
