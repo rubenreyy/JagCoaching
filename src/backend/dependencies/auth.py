@@ -4,7 +4,7 @@ import os
 from typing import Annotated, Optional
 from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer
-import jwt
+from jose import JWTError, jwt
 import bcrypt
 bcrypt.__about__ = bcrypt # some bug with passlib and bcrypt
 from passlib.context import CryptContext
@@ -19,8 +19,8 @@ load_dotenv("./.env.development")
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY","8aff34e1-d330-4eb8-b4be-5d35f5885451")
-ALGORITHM = os.getenv("ALGORITHM","HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES","30"))
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -75,7 +75,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             print("username is none")
             raise credentials_exception
         token_data = TokenData(username=username)
-    except jwt.PyJWTError as exc:
+    except JWTError as exc:
         print("jwt error")
         raise credentials_exception from exc
     user = get_user(db=DB_CONNECTION, username=token_data.username)

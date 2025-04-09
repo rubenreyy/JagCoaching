@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 import asyncio
 import logging
-from websockets.ws_manager import manager
+from src.backend.ws_manager.ws_manager import manager
 from scripts.live_pipeline.live_analysis_pipeline import run_analysis_once
 from scripts.live_pipeline.audio_analysis import transcribe_audio
 import sounddevice as sd

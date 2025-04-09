@@ -2,9 +2,9 @@ import time
 import cv2
 import json
 import threading
-from face_analysis import analyze_face
-from audio_analysis import record_audio, transcribe_audio
-from live_gemini import get_gemini_feedback
+from scripts.live_pipeline.face_analysis import analyze_face
+from scripts.live_pipeline.audio_analysis import record_audio, transcribe_audio
+from scripts.live_pipeline.live_gemini import get_gemini_feedback
 from datetime import datetime
 import logging
 

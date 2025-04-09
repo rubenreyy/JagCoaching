@@ -7,7 +7,7 @@ import librosa
 from transformers import pipeline, WhisperProcessor, WhisperForConditionalGeneration, WhisperConfig 
 from keybert import KeyBERT
 from scipy.signal import find_peaks
-from google import genai
+import google.generativeai as genai
 from google.genai import types
 from dotenv import load_dotenv
 import json
@@ -20,7 +20,7 @@ load_dotenv("./.env.development")
 # Avoids CUDA out of memory error
 blocking = os.environ.get("CUDA_LAUNCH_BLOCKING")
 print(blocking)
-# Must install torch torchaudio transformers librosa numpy scipy keybert google-genai python-dotenv
+# Must install torch torchaudio transformers librosa numpy scipy keybert python-dotenv
 
 # TODO: Add error handling, and logging, make it more efficient and scalable
 
