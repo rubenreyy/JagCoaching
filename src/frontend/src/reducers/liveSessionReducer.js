@@ -66,7 +66,8 @@ export function liveSessionReducer(state, action) {
           keywords: {
             ...(state.feedback?.keywords || { topics: [] }),
             ...(action.payload.keywords || {})
-          }
+          },
+          raw_feedback: action.payload.raw_feedback || state.feedback?.raw_feedback
         }
       };
 

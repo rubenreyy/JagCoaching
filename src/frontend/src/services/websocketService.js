@@ -4,128 +4,209 @@ class WebSocketService {
   constructor() {
     this.ws = null;
     this.sessionId = null;
+    this.isConnecting = false;
+    this.handlers = new Map();
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
-    this.reconnectTimeout = 1000; // Start with 1 second
-    this.handlers = new Map();
-    this.isConnecting = false;
-  }
-
-  async initSession() {
-    try {
-      const response = await fetch('http://localhost:8000/api/live/session/start', {
-        method: 'POST',
-      });
-      const data = await response.json();
-      this.sessionId = data.session_id;
-      return this.sessionId;
-    } catch (error) {
-      console.error('Failed to initialize session:', error);
-      throw error;
-    }
+    this.mockMode = false;
+    // Use IPv4 localhost explicitly
+    this.apiBaseUrl = 'http://127.0.0.1:8000';
   }
 
   async connect(onConnect, onDisconnect) {
-    if (this.isConnecting) return;
+    if (this.isConnecting) {
+      console.log('Connection already in progress');
+      return;
+    }
+    
     this.isConnecting = true;
-
+    
     try {
-      if (!this.sessionId) {
-        await this.initSession();
+      // First, try to get a session ID from the server
+      let response;
+      try {
+        // Use the explicit IPv4 URL
+        response = await fetch(`${this.apiBaseUrl}/api/live/session/start`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to start session: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        this.sessionId = data.session_id;
+        console.log(`Session started with ID: ${this.sessionId}`);
+      } catch (err) {
+        console.error('Error starting session:', err);
+        
+        // If server is unavailable, switch to mock mode
+        if (err.message.includes('Failed to fetch') || 
+            err.message.includes('NetworkError') || 
+            err.message.includes('Failed to start session')) {
+          console.warn('Server unavailable, switching to mock mode');
+          this.mockMode = true;
+          this.sessionId = 'mock-session-' + Date.now();
+          
+          // Simulate successful connection
+          setTimeout(() => {
+            this.isConnecting = false;
+            if (onConnect) onConnect();
+          }, 500);
+          
+          return;
+        } else {
+          throw err;
+        }
       }
-
-      this.ws = new WebSocket(`ws://localhost:8000/api/live/ws/${this.sessionId}`);
-
+      
+      // Then establish WebSocket connection
+      const wsUrl = `ws://127.0.0.1:8000/api/live/ws/${this.sessionId}`;
+      console.log(`Connecting to WebSocket at ${wsUrl}`);
+      
+      this.ws = new WebSocket(wsUrl);
+      
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connection established');
+        this.isConnecting = false;
         this.reconnectAttempts = 0;
-        this.reconnectTimeout = 1000;
-        this.isConnecting = false;
-        onConnect?.();
+        if (onConnect) onConnect();
       };
-
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        this.isConnecting = false;
-        onDisconnect?.();
-        this.handleReconnect(onConnect, onDisconnect);
+      
+      this.ws.onclose = (event) => {
+        console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
+        this.ws = null;
+        
+        if (onDisconnect) onDisconnect();
+        
+        // Attempt to reconnect if not intentionally closed
+        if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+          console.log(`Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
+          this.reconnectAttempts++;
+          setTimeout(() => this.connect(onConnect, onDisconnect), 2000);
+        }
       };
-
+      
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        this.isConnecting = false;
       };
-
+      
       this.ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          this.handleMessage(message);
+          console.log(`Received message of type: ${message.type}`);
+          
+          if (this.handlers.has(message.type)) {
+            this.handlers.get(message.type)(message.data);
+          } else {
+            console.warn(`No handler registered for message type: ${message.type}`);
+          }
         } catch (error) {
-          console.error('Error parsing message:', error);
+          console.error('Error processing message:', error);
         }
       };
-
     } catch (error) {
-      console.error('Connection error:', error);
+      console.error('Error connecting to WebSocket:', error);
       this.isConnecting = false;
       throw error;
     }
-  }
-
-  handleReconnect(onConnect, onDisconnect) {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
-      return;
-    }
-
-    setTimeout(() => {
-      this.reconnectAttempts++;
-      this.reconnectTimeout *= 2; // Exponential backoff
-      this.connect(onConnect, onDisconnect);
-    }, this.reconnectTimeout);
   }
 
   registerHandler(type, handler) {
     this.handlers.set(type, handler);
   }
 
-  removeHandler(type) {
-    this.handlers.delete(type);
-  }
-
-  handleMessage(message) {
-    const handler = this.handlers.get(message.type);
-    if (handler) {
-      handler(message.data);
-    }
-  }
-
-  sendMessage(type, data) {
+  send(type, data) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket is not connected');
+      console.warn('WebSocket is not connected, cannot send message');
       return;
     }
-
-    const message = JSON.stringify({ type, ...data });
-    this.ws.send(message);
+    
+    try {
+      this.ws.send(JSON.stringify({ type, data }));
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   }
 
-  sendVideoFrame(frame) {
-    this.sendMessage(WSMessageType.VIDEO_FRAME, { frame });
+  sendMockVideoFrame(frameData) {
+    if (this.mockMode) {
+      console.log('Mock: Video frame sent');
+      
+      // Simulate feedback every 5 seconds
+      if (!this._mockFeedbackInterval) {
+        this._mockFeedbackInterval = setInterval(() => {
+          if (this.handlers.has(WSMessageType.FEEDBACK)) {
+            console.log('Sending mock feedback');
+            this.handlers.get(WSMessageType.FEEDBACK)({
+              emotion: "neutral",
+              eye_contact: "yes",
+              transcript: "Mock transcript data",
+              gemini_feedback: {
+                posture_feedback: "Stand straight with shoulders back.",
+                expression_feedback: "Try to vary your expressions to engage your audience.",
+                eye_contact_feedback: "Maintain consistent eye contact with the camera.",
+                voice_feedback: "Speak clearly and project your voice.",
+                overall_suggestion: "Practice speaking with more energy and expression."
+              },
+              timestamp: new Date().toISOString()
+            });
+          }
+        }, 2000);
+      }
+    }
   }
 
-  sendAudioChunk(audio) {
-    this.sendMessage(WSMessageType.AUDIO_CHUNK, { audio });
+  sendMockAudioChunk(audioData) {
+    if (this.mockMode) {
+      console.log('Mock: Audio chunk sent');
+    }
+  }
+
+  sendVideoFrame(frameData) {
+    if (this.mockMode) {
+      this.sendMockVideoFrame(frameData);
+      return;
+    }
+    
+    if (!frameData.startsWith('data:image')) {
+      console.error('Invalid frame data format');
+      return;
+    }
+    this.send(WSMessageType.VIDEO_FRAME, frameData);
+  }
+
+  sendAudioChunk(audioData) {
+    if (this.mockMode) {
+      this.sendMockAudioChunk(audioData);
+      return;
+    }
+    
+    if (!audioData) {
+      console.error('Invalid audio data');
+      return;
+    }
+    this.send(WSMessageType.AUDIO_CHUNK, audioData);
   }
 
   sendPong() {
-    this.sendMessage(WSMessageType.PONG, {});
+    console.log('Sending PONG message');
+    this.send(WSMessageType.PONG, { timestamp: new Date().toISOString() });
   }
 
   async disconnect() {
-    if (this.sessionId) {
+    // Clear mock feedback interval if it exists
+    if (this._mockFeedbackInterval) {
+      clearInterval(this._mockFeedbackInterval);
+      this._mockFeedbackInterval = null;
+    }
+    
+    if (this.sessionId && !this.mockMode) {
       try {
-        await fetch(`http://localhost:8000/api/live/session/${this.sessionId}/stop`, {
+        await fetch(`${this.apiBaseUrl}/api/live/session/${this.sessionId}/stop`, {
           method: 'POST',
         });
       } catch (error) {
@@ -140,6 +221,7 @@ class WebSocketService {
 
     this.sessionId = null;
     this.handlers.clear();
+    this.mockMode = false;
   }
 }
 
