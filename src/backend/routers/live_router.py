@@ -53,57 +53,77 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         await websocket.accept()
         logger.info(f"WebSocket connection accepted for session {session_id}")
         
-        # Initialize session data
+        # Initialize session data with metrics tracking
         session_data = {
             "last_ping": datetime.now(),
             "analysis_in_progress": False,
             "last_frame": None,
-            "last_audio": None
+            "last_audio": None,
+            "metrics": {
+                "eye_contact": {"yes": 0, "limited": 0, "total": 0},
+                "emotion": {"happy": 0, "neutral": 0, "sad": 0, "angry": 0, "surprise": 0, "total": 0},
+                "posture": {"good": 0, "poor": 0, "total": 0},
+                "audio_quality": {"excellent": 0, "good": 0, "moderate": 0, "low": 0, "none": 0, "total": 0}
+            }
         }
         
-        # Then connect to manager with initialized data
-        await manager.connect(websocket, session_id, session_data)
-        
-        # Send initial feedback
-        await send_initial_feedback(websocket, session_id)
+        # Register connection with manager
+        await manager.connect(session_id, websocket)
         
         # Start periodic feedback task
-        feedback_task = asyncio.create_task(send_periodic_feedback(websocket, session_id))
+        feedback_task = asyncio.create_task(
+            periodic_feedback(websocket, session_id, session_data)
+        )
         
+        # Process incoming messages
         try:
             while True:
-                try:
-                    data = await websocket.receive_json()
-                    message_type = data.get("type")
-                    message_data = data.get("data")
+                # Wait for message with timeout
+                message = await asyncio.wait_for(websocket.receive_json(), timeout=30)
+                
+                # Update last ping time
+                session_data["last_ping"] = datetime.now()
+                
+                # Process message based on type
+                if message["type"] == WSMessageType.PING:
+                    await websocket.send_json({"type": WSMessageType.PONG})
+                
+                elif message["type"] == WSMessageType.VIDEO_FRAME:
+                    # Log only once per second instead of every frame
+                    current_time = datetime.now()
+                    if not hasattr(websocket_endpoint, "last_frame_log") or \
+                       (current_time - websocket_endpoint.last_frame_log).total_seconds() > 1:
+                        logger.debug(f"Received video frame from session {session_id}")
+                        websocket_endpoint.last_frame_log = current_time
                     
-                    logger.info(f"Received {message_type} message from session {session_id}")
-                    
-                    if message_type == WSMessageType.VIDEO_FRAME:
-                        # Log receipt of frame
-                        logger.info(f"Received video frame from session {session_id}, data length: {len(message_data) if message_data else 0}")
-                        manager.update_session_data(session_id, {"last_frame": message_data})
-                        
-                    elif message_type == WSMessageType.AUDIO_CHUNK:
-                        # Log receipt of audio
-                        logger.info(f"Received audio chunk from session {session_id}, data length: {len(message_data) if message_data else 0}")
-                        manager.update_session_data(session_id, {"last_audio": message_data})
-                        
-                    elif message_type == WSMessageType.PONG:
-                        manager.update_session_data(session_id, {"last_ping": datetime.now()})
-                        
-                except json.JSONDecodeError:
-                    logger.error(f"Invalid JSON received from client")
-                    continue
-                    
+                    # Store the frame for analysis
+                    session_data["last_frame"] = message["data"]
+                
+                elif message["type"] == WSMessageType.AUDIO_CHUNK:
+                    logger.debug(f"Received audio chunk from session {session_id}")
+                    session_data["last_audio"] = message["data"]
+                
+                else:
+                    logger.warning(f"Received unknown message type from session {session_id}: {message['type']}")
+        
         except WebSocketDisconnect:
-            logger.info(f"Client disconnected from session {session_id}")
+            logger.info(f"WebSocket disconnected for session {session_id}")
+        except asyncio.TimeoutError:
+            logger.warning(f"WebSocket timeout for session {session_id}")
         finally:
+            # Cancel feedback task
             feedback_task.cancel()
-            await manager.disconnect(session_id)
+            try:
+                await feedback_task
+            except asyncio.CancelledError:
+                pass
             
+            # Disconnect from manager
+            await manager.disconnect(session_id)
+            logger.info(f"Session {session_id} disconnected and cleanup complete")
+    
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(f"Error in WebSocket endpoint for session {session_id}: {e}", exc_info=True)
         try:
             await manager.disconnect(session_id)
         except:
@@ -216,47 +236,81 @@ async def keep_alive(websocket: WebSocket, session_id: str):
         except:
             pass
 
-# Add this new function after the keep_alive function
-async def send_periodic_feedback(websocket: WebSocket, session_id: str):
-    """Send periodic feedback to the client"""
+# Update periodic feedback to track metrics
+async def periodic_feedback(websocket: WebSocket, session_id: str, session_data: Dict):
+    """Send periodic feedback based on latest frame and audio"""
     try:
         while True:
+            # Wait for next feedback interval
             await asyncio.sleep(10)  # Send feedback every 10 seconds
             
+            # Check if websocket is still connected
+            if websocket.client_state == WebSocketState.DISCONNECTED:
+                logger.info(f"WebSocket disconnected during periodic feedback for session {session_id}")
+                break
+            
+            # Check if we have data to analyze
             try:
-                # Check if websocket is still connected
-                if websocket.client_state != WebSocketState.CONNECTED:
-                    logger.info(f"WebSocket for session {session_id} is no longer connected, stopping periodic feedback")
-                    break
+                has_frame = session_data["last_frame"] is not None
+                has_audio = session_data["last_audio"] is not None
                 
-                # Get session data
-                session_data = manager.get_session_data(session_id)
+                # Only log once that we're generating feedback
+                logger.info(f"Generating periodic feedback for session {session_id}")
                 
-                # Skip if analysis is already in progress
-                if session_data.get("analysis_in_progress", False):
-                    logger.debug(f"Analysis already in progress for session {session_id}, skipping periodic feedback")
+                # Skip detailed logging about frame/audio presence
+                
+                # If analysis is already in progress, skip this round
+                if session_data["analysis_in_progress"]:
+                    logger.debug(f"Analysis already in progress for session {session_id}, skipping")
                     continue
                 
-                # Get the latest frame and audio data
-                frame = session_data.get("last_frame")
-                audio_data = session_data.get("last_audio")
+                # Mark analysis as in progress
+                session_data["analysis_in_progress"] = True
                 
-                # Log what data we have
-                logger.info(f"Periodic feedback for session {session_id}: " +
-                           f"has frame: {frame is not None}, " +
-                           f"has audio: {audio_data is not None}")
-                
-                # If we have at least one type of data, proceed with analysis
-                if frame is not None or audio_data is not None:
-                    # Mark analysis as in progress
-                    session_data["analysis_in_progress"] = True
+                # Check if we have a frame to analyze
+                if has_frame:
+                    # Get the frame data
+                    frame = session_data["last_frame"]
+                    audio_data = session_data["last_audio"]
                     
                     try:
-                        # Run analysis with available data
+                        # Run analysis with timeout
                         result = await asyncio.wait_for(
                             asyncio.to_thread(run_analysis_once, frame, audio_data),
                             timeout=5.0  # 5 second timeout
                         )
+                        
+                        # Update metrics with the result
+                        if result:
+                            metrics = session_data["metrics"]
+                            
+                            # Update eye contact metrics
+                            if "eye_contact" in result:
+                                eye_contact = result["eye_contact"]
+                                metrics["eye_contact"]["total"] += 1
+                                if eye_contact in metrics["eye_contact"]:
+                                    metrics["eye_contact"][eye_contact] += 1
+                            
+                            # Update emotion metrics
+                            if "emotion" in result:
+                                emotion = result["emotion"]
+                                metrics["emotion"]["total"] += 1
+                                if emotion in metrics["emotion"]:
+                                    metrics["emotion"][emotion] += 1
+                            
+                            # Update posture metrics
+                            if "posture" in result:
+                                posture = result["posture"]
+                                metrics["posture"]["total"] += 1
+                                if posture in metrics["posture"]:
+                                    metrics["posture"][posture] += 1
+                            
+                            # Update audio quality metrics
+                            if "audio_quality" in result:
+                                audio_quality = result["audio_quality"]
+                                metrics["audio_quality"]["total"] += 1
+                                if audio_quality in metrics["audio_quality"]:
+                                    metrics["audio_quality"][audio_quality] += 1
                         
                         # Send feedback to client
                         await websocket.send_json({
@@ -264,19 +318,19 @@ async def send_periodic_feedback(websocket: WebSocket, session_id: str):
                             "data": result
                         })
                         
-                        logger.info(f"Sent periodic feedback to session {session_id}")
+                        logger.info(f"Sent feedback to session {session_id}")
                     except asyncio.TimeoutError:
-                        logger.warning(f"Periodic analysis timed out for session {session_id}")
+                        logger.warning(f"Analysis timed out for session {session_id}")
                         await send_fallback_feedback(websocket, session_id, "Analysis is taking longer than expected")
                     except Exception as e:
-                        logger.error(f"Error in periodic analysis for session {session_id}: {e}", exc_info=True)
+                        logger.error(f"Error in analysis for session {session_id}: {e}")
                         await send_fallback_feedback(websocket, session_id, "Analysis encountered an error")
                     finally:
                         # Mark analysis as complete
                         session_data["analysis_in_progress"] = False
                 else:
-                    logger.warning(f"No frame or audio data available for session {session_id}, sending placeholder feedback")
-                    # Send placeholder feedback similar to test output
+                    logger.warning(f"No frame data available for session {session_id}")
+                    # Send placeholder feedback
                     await websocket.send_json({
                         "type": WSMessageType.FEEDBACK,
                         "data": {
@@ -293,25 +347,51 @@ async def send_periodic_feedback(websocket: WebSocket, session_id: str):
                             }
                         }
                     })
-                    logger.info(f"Sent placeholder feedback to session {session_id}")
                 
             except Exception as e:
-                logger.error(f"Error generating periodic feedback for session {session_id}: {e}", exc_info=True)
+                logger.error(f"Error generating feedback for session {session_id}: {e}")
                 try:
                     await send_fallback_feedback(websocket, session_id, "Error generating feedback")
                 except:
                     pass
                 
     except Exception as e:
-        logger.error(f"Periodic feedback error for session {session_id}: {e}", exc_info=True)
+        logger.error(f"Periodic feedback error for session {session_id}: {e}")
 
+# Add a new endpoint to get session metrics
+@router.get("/session/{session_id}/metrics")
+async def get_session_metrics(session_id: str):
+    """Get metrics for a session"""
+    try:
+        # Get session data from manager
+        session_data = manager.get_session_data(session_id)
+        if not session_data or "metrics" not in session_data:
+            raise HTTPException(status_code=404, detail="Session metrics not found")
+        
+        return {"session_id": session_id, "metrics": session_data["metrics"]}
+    except Exception as e:
+        logger.error(f"Failed to get metrics for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to get session metrics")
+
+# Update stop_session to include metrics
 @router.post("/session/{session_id}/stop")
 async def stop_session(session_id: str):
-    """Stop a live analysis session"""
+    """Stop a live analysis session and return metrics"""
     try:
         logger.info(f"Stopping session {session_id}")
+        
+        # Get session metrics before disconnecting
+        session_data = manager.get_session_data(session_id)
+        metrics = session_data.get("metrics", {}) if session_data else {}
+        
+        # Disconnect the session
         await manager.disconnect(session_id)
-        return {"status": "stopped", "session_id": session_id}
+        
+        return {
+            "status": "stopped", 
+            "session_id": session_id,
+            "metrics": metrics
+        }
     except Exception as e:
         logger.error(f"Failed to stop session {session_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to stop session") 

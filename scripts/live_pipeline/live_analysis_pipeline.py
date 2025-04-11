@@ -43,6 +43,7 @@ def run_analysis_once(frame, audio_data=None):
         eye_contact = "limited"
         posture = "unknown"
         transcript = "No speech detected"
+        audio_quality = "unknown"
         
         # Process frame if available
         if frame is not None:
@@ -68,46 +69,47 @@ def run_analysis_once(frame, audio_data=None):
                     # Convert to numpy array
                     nparr = np.frombuffer(img_data, np.uint8)
                     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    logger.info(f"Successfully converted base64 image to numpy array, shape: {frame.shape if frame is not None else 'None'}")
+                    logger.info(f"Successfully converted base64 image to numpy array, shape: {frame.shape}")
                 except Exception as e:
-                    logger.error(f"Error converting base64 to image: {e}")
+                    logger.error(f"Error converting base64 image: {e}")
                     frame = None
             
-            if frame is not None:
+            # Run face analysis if we have a valid frame
+            if frame is not None and isinstance(frame, np.ndarray) and frame.size > 0:
                 emotion, eye_contact, posture = analyze_face(frame)
                 logger.info(f"Face analysis results: emotion={emotion}, eye_contact={eye_contact}, posture={posture}")
             else:
-                logger.warning("Frame conversion failed")
+                logger.warning("Invalid frame for face analysis")
         else:
             logger.warning("No frame provided for analysis")
         
         # Process audio if available
         if audio_data is not None:
-            # Debug audio data
-            if isinstance(audio_data, np.ndarray):
-                max_amplitude = np.max(np.abs(audio_data))
-                logger.info(f"Audio data is numpy array, shape: {audio_data.shape}, max amplitude: {max_amplitude}")
-                
-                # Only process if there's actual audio content
-                if max_amplitude > 0.001:  # Lower threshold to catch quieter speech
-                    transcript = transcribe_audio(audio_data)
-                    logger.info(f"Audio transcription: {transcript}")
-                else:
-                    logger.warning("Audio data too quiet, skipping transcription")
-                    transcript = "Audio too quiet - please speak louder"
-            elif isinstance(audio_data, list):
-                logger.info(f"Audio data is list, length: {len(audio_data)}")
-                # Convert list to numpy array if needed
-                audio_array = np.array(audio_data)
-                transcript = transcribe_audio(audio_array)
-                logger.info(f"Audio transcription: {transcript}")
-            elif isinstance(audio_data, str):
-                logger.info(f"Audio data is string, length: {len(audio_data)}")
-                transcript = transcribe_audio(audio_data)
-                logger.info(f"Audio transcription: {transcript}")
+            # Debug audio data type
+            if isinstance(audio_data, str):
+                logger.info(f"Audio data is a string, length: {len(audio_data)}")
+            elif isinstance(audio_data, np.ndarray):
+                logger.info(f"Audio data is numpy array, shape: {audio_data.shape}")
             else:
                 logger.info(f"Audio data is type: {type(audio_data)}")
-                transcript = "No speech detected"
+                
+            # Transcribe audio
+            transcript = transcribe_audio(audio_data)
+            logger.info(f"Audio transcription: {transcript}")
+            
+            # Extract audio quality from transcript
+            if "volume is low" in transcript:
+                audio_quality = "low"
+            elif "No speech detected" in transcript:
+                audio_quality = "none"
+            elif "Good volume" in transcript:
+                audio_quality = "good"
+            elif "Excellent" in transcript:
+                audio_quality = "excellent"
+            elif "too loud" in transcript:
+                audio_quality = "too_loud"
+            else:
+                audio_quality = "moderate"
         else:
             logger.warning("No audio data provided for analysis")
             # Try to record audio directly if no audio data provided
@@ -118,9 +120,24 @@ def run_analysis_once(frame, audio_data=None):
                 if audio_data is not None:
                     transcript = transcribe_audio(audio_data)
                     logger.info(f"Recorded audio transcription: {transcript}")
+                    
+                    # Extract audio quality from transcript
+                    if "volume is low" in transcript:
+                        audio_quality = "low"
+                    elif "No speech detected" in transcript:
+                        audio_quality = "none"
+                    elif "Good volume" in transcript:
+                        audio_quality = "good"
+                    elif "Excellent" in transcript:
+                        audio_quality = "excellent"
+                    elif "too loud" in transcript:
+                        audio_quality = "too_loud"
+                    else:
+                        audio_quality = "moderate"
             except Exception as e:
                 logger.error(f"Error recording audio: {e}")
                 transcript = "No speech detected"
+                audio_quality = "unknown"
         
         # Get Gemini feedback with posture information
         gemini_feedback = get_gemini_feedback(emotion, eye_contact, posture, transcript)
@@ -130,6 +147,7 @@ def run_analysis_once(frame, audio_data=None):
             "eye_contact": eye_contact,
             "posture": posture,
             "transcript": transcript,
+            "audio_quality": audio_quality,
             "gemini_feedback": gemini_feedback,
             "timestamp": datetime.now().isoformat()
         }
@@ -141,6 +159,7 @@ def run_analysis_once(frame, audio_data=None):
             "eye_contact": "limited",
             "posture": "unknown",
             "transcript": "Analysis in progress...",
+            "audio_quality": "unknown",
             "gemini_feedback": {
                 "posture_feedback": "Stand straight with shoulders back.",
                 "expression_feedback": "Add more expression to engage your audience.",

@@ -54,3 +54,33 @@ class ConnectionManager:
 
 # Create global instance
 manager = ConnectionManager() 
+
+# Add session data storage to WebSocketManager
+class WebSocketManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.session_data: Dict[str, Dict] = {}
+    
+    async def connect(self, session_id: str, websocket: WebSocket):
+        self.active_connections[session_id] = websocket
+        # Initialize session data if not exists
+        if session_id not in self.session_data:
+            self.session_data[session_id] = {}
+    
+    async def disconnect(self, session_id: str):
+        if session_id in self.active_connections:
+            del self.active_connections[session_id]
+        # Keep session data for potential retrieval after disconnect
+    
+    def get_session_data(self, session_id: str) -> Dict:
+        return self.session_data.get(session_id, {})
+    
+    def update_session_data(self, session_id: str, data: Dict):
+        if session_id in self.session_data:
+            self.session_data[session_id].update(data)
+        else:
+            self.session_data[session_id] = data
+    
+    async def send_message(self, session_id: str, message: Dict):
+        if session_id in self.active_connections:
+            await self.active_connections[session_id].send_json(message) 

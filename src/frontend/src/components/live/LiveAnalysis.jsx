@@ -16,6 +16,12 @@ const LiveAnalysis = () => {
     posture: "Waiting for analysis...",
     voice: "Waiting for analysis..."
   });
+  const [feedbackStatus, setFeedbackStatus] = useState({
+    eyeContact: "neutral",
+    expressions: "neutral",
+    posture: "neutral",
+    voice: "neutral"
+  });
   const [lastUpdateTime, setLastUpdateTime] = useState('');
   
   // WebSocket connection
@@ -27,6 +33,14 @@ const LiveAnalysis = () => {
     error: wsError,
     sessionId
   } = useWebSocket();
+
+  // Add new state for tracking session metrics
+  const [sessionMetrics, setSessionMetrics] = useState({
+    eyeContact: { good: 0, limited: 0, total: 0 },
+    expressions: { positive: 0, neutral: 0, negative: 0, total: 0 },
+    posture: { good: 0, poor: 0, total: 0 },
+    voice: { good: 0, moderate: 0, poor: 0, total: 0 }
+  });
 
   // Add this near the top of your component
   useEffect(() => {
@@ -67,28 +81,103 @@ const LiveAnalysis = () => {
       },
       sentiment: {
         label: data.emotion || null,
-        score: null,
-        suggestion: data.gemini_feedback?.expression_feedback || null
+        score: null
       },
-      keywords: {
-        topics: [],
-        context: null
+      eye_contact: {
+        score: data.eye_contact === "yes" ? 1 : data.eye_contact === "limited" ? 0.5 : 0,
+        suggestion: data.gemini_feedback?.eye_contact_feedback || null
       },
-      transcript: data.transcript || "",
+      posture: {
+        score: data.posture === "good" ? 1 : data.posture === "poor" ? 0 : 0.5,
+        suggestion: data.gemini_feedback?.posture_feedback || null
+      },
       raw_feedback: data
     });
     
-    // Update live feedback text with real data
-    setLiveFeedbackText({
-      eyeContact: data.gemini_feedback?.eye_contact_feedback || "Analyzing eye contact...",
-      expressions: data.gemini_feedback?.expression_feedback || "Analyzing facial expressions...",
-      posture: data.gemini_feedback?.posture_feedback || "Analyzing posture...",
-      voice: data.gemini_feedback?.voice_feedback || "Analyzing voice..."
+    // Update live feedback text with more specific messages based on actual status
+    const newFeedbackText = {
+      // For eye contact, provide more specific guidance
+      eyeContact: data.eye_contact === "yes" 
+        ? "Great eye contact! You're connecting well with your audience."
+        : data.eye_contact === "limited"
+        ? "Try looking directly at the camera lens. Position yourself so your eyes are level with the camera."
+        : data.gemini_feedback?.eye_contact_feedback || "Looking for eye contact...",
+      
+      // For expressions, be more specific about the detected emotion
+      expressions: data.emotion === "happy"
+        ? "Great smile! Your positive expression engages the audience."
+        : data.emotion === "neutral"
+        ? "Try to add more expression to engage your audience better."
+        : data.gemini_feedback?.expression_feedback || "Analyzing expressions...",
+      
+      // For posture, acknowledge when it's good
+      posture: data.posture === "good"
+        ? "Excellent posture! You appear confident and professional."
+        : data.gemini_feedback?.posture_feedback || "Checking posture...",
+      
+      // For voice, be more specific about audio quality
+      voice: data.audio_quality === "excellent"
+        ? "Excellent voice projection! Very clear speech."
+        : data.audio_quality === "good"
+        ? "Good volume level - your speech is clear and audible."
+        : data.audio_quality === "moderate"
+        ? "Acceptable volume - try projecting a bit more for clarity."
+        : data.audio_quality === "low"
+        ? "Volume is low - please speak louder to be heard clearly."
+        : data.audio_quality === "none"
+        ? "No speech detected - please speak up."
+        : data.audio_quality === "too_loud"
+        ? "Volume may be too loud - consider speaking a bit softer."
+        : data.gemini_feedback?.voice_feedback || "Listening to your voice..."
+    };
+    
+    // Update feedback status indicators
+    const newFeedbackStatus = {
+      eyeContact: data.eye_contact === "yes" ? "positive" : data.eye_contact === "limited" ? "warning" : "negative",
+      expressions: data.emotion === "happy" ? "positive" : data.emotion === "neutral" ? "neutral" : "warning",
+      posture: data.posture === "good" ? "positive" : data.posture === "poor" ? "negative" : "neutral",
+      voice: data.audio_quality === "good" || data.audio_quality === "excellent" ? "positive" : 
+             data.audio_quality === "moderate" ? "neutral" : 
+             data.audio_quality === "low" ? "warning" : "negative"
+    };
+    
+    // Track metrics for session summary
+    setSessionMetrics(prev => {
+      // Update eye contact metrics
+      const eyeContact = {...prev.eyeContact};
+      if (data.eye_contact === "yes") eyeContact.good++;
+      else if (data.eye_contact === "limited") eyeContact.limited++;
+      eyeContact.total++;
+      
+      // Update expressions metrics
+      const expressions = {...prev.expressions};
+      if (data.emotion === "happy") expressions.positive++;
+      else if (data.emotion === "neutral") expressions.neutral++;
+      else expressions.negative++;
+      expressions.total++;
+      
+      // Update posture metrics
+      const posture = {...prev.posture};
+      if (data.posture === "good") posture.good++;
+      else if (data.posture === "poor") posture.poor++;
+      posture.total++;
+      
+      // Update voice metrics
+      const voice = {...prev.voice};
+      if (data.audio_quality === "good" || data.audio_quality === "excellent") voice.good++;
+      else if (data.audio_quality === "moderate") voice.moderate++;
+      else voice.poor++;
+      voice.total++;
+      
+      return { eyeContact, expressions, posture, voice };
     });
     
-    // Show feedback panel and update timestamp for UI refresh
-    setShowFeedback(true);
+    setLiveFeedbackText(newFeedbackText);
+    setFeedbackStatus(newFeedbackStatus);
+    
+    // Update timestamp
     setLastUpdateTime(new Date().toLocaleTimeString());
+    
   }, [actions]);
 
   // Register WebSocket handlers
@@ -144,11 +233,140 @@ const LiveAnalysis = () => {
     }
   }, [connect, actions]);
 
-  // Stop recording
+  // Enhanced handleStop function to generate session summary
   const handleStop = useCallback(async () => {
+    if (state.status !== 'recording') {
+      return;
+    }
+    
     actions.setStatus('stopped');
-    await disconnect();
-  }, [disconnect, actions]);
+    disconnect();
+    
+    // Generate session summary based on collected metrics
+    const summary = generateSessionSummary(sessionMetrics);
+    
+    // Update the feedback with the summary
+    actions.updateFeedback({
+      ...state.feedback,
+      session_summary: summary
+    });
+    
+    setShowFeedback(true);
+    
+  }, [state.status, disconnect, actions, sessionMetrics, state.feedback]);
+
+  // Function to generate session summary
+  const generateSessionSummary = useCallback((metrics) => {
+    const summary = {};
+    
+    // Eye contact summary
+    const eyeContactRatio = metrics.eyeContact.total > 0 ? 
+      metrics.eyeContact.good / metrics.eyeContact.total : 0;
+    
+    if (eyeContactRatio >= 0.7) {
+      summary.eyeContact = {
+        status: "positive",
+        message: "Excellent eye contact throughout your session. You consistently engaged with the camera."
+      };
+    } else if (eyeContactRatio >= 0.4) {
+      summary.eyeContact = {
+        status: "neutral",
+        message: "Your eye contact was inconsistent. Try to maintain more consistent eye contact with the camera."
+      };
+    } else {
+      summary.eyeContact = {
+        status: "negative",
+        message: "Your eye contact needs improvement. Practice looking directly at the camera lens more consistently."
+      };
+    }
+    
+    // Expressions summary
+    const expressionPositiveRatio = metrics.expressions.total > 0 ? 
+      metrics.expressions.positive / metrics.expressions.total : 0;
+    const expressionNeutralRatio = metrics.expressions.total > 0 ? 
+      metrics.expressions.neutral / metrics.expressions.total : 0;
+    
+    if (expressionPositiveRatio >= 0.6) {
+      summary.expressions = {
+        status: "positive",
+        message: "Great facial expressions! You showed positive engagement throughout your presentation."
+      };
+    } else if (expressionNeutralRatio >= 0.7) {
+      summary.expressions = {
+        status: "neutral",
+        message: "Your expressions were mostly neutral. Try to add more varied expressions to engage your audience."
+      };
+    } else {
+      summary.expressions = {
+        status: "warning",
+        message: "Your expressions could use improvement. Practice showing more positive and engaging expressions."
+      };
+    }
+    
+    // Posture summary
+    const postureRatio = metrics.posture.total > 0 ? 
+      metrics.posture.good / metrics.posture.total : 0;
+    
+    if (postureRatio >= 0.7) {
+      summary.posture = {
+        status: "positive",
+        message: "Excellent posture throughout your presentation. You appeared confident and professional."
+      };
+    } else if (postureRatio >= 0.4) {
+      summary.posture = {
+        status: "neutral",
+        message: "Your posture was inconsistent. Remember to maintain good posture throughout your presentation."
+      };
+    } else {
+      summary.posture = {
+        status: "negative",
+        message: "Your posture needs improvement. Practice standing/sitting straight with shoulders back."
+      };
+    }
+    
+    // Voice summary
+    const voiceRatio = metrics.voice.total > 0 ? 
+      metrics.voice.good / metrics.voice.total : 0;
+    
+    if (voiceRatio >= 0.7) {
+      summary.voice = {
+        status: "positive",
+        message: "Excellent voice projection and clarity throughout your presentation."
+      };
+    } else if (voiceRatio >= 0.4) {
+      summary.voice = {
+        status: "neutral",
+        message: "Your voice projection was inconsistent. Practice maintaining consistent volume and clarity."
+      };
+    } else {
+      summary.voice = {
+        status: "negative",
+        message: "Your voice projection needs improvement. Practice speaking louder and more clearly."
+      };
+    }
+    
+    // Overall summary
+    const overallScore = (eyeContactRatio + expressionPositiveRatio + postureRatio + voiceRatio) / 4;
+    
+    if (overallScore >= 0.7) {
+      summary.overall = {
+        status: "positive",
+        message: "Great job! You demonstrated strong presentation skills overall. Keep up the good work!"
+      };
+    } else if (overallScore >= 0.4) {
+      summary.overall = {
+        status: "neutral",
+        message: "Your presentation skills are developing well. Focus on consistency in all areas for improvement."
+      };
+    } else {
+      summary.overall = {
+        status: "warning",
+        message: "Your presentation skills need more practice. Focus on the specific areas highlighted for improvement."
+      };
+    }
+    
+    return summary;
+  }, []);
 
   // Handle save session
   const handleSave = useCallback(async () => {
@@ -258,68 +476,81 @@ const LiveAnalysis = () => {
 
           {/* Live Feedback - Shown during recording */}
           {state.status === 'recording' && (
-            <div className="space-y-4 mt-4">
-              <h3 className="text-xl font-semibold">Live Feedback</h3>
-              <p className="text-sm text-gray-500">Last updated: {lastUpdateTime || 'Waiting for data...'}</p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`p-4 rounded-lg ${feedbackStatus.eyeContact === 'positive' ? 'bg-green-100' : feedbackStatus.eyeContact === 'warning' ? 'bg-yellow-100' : feedbackStatus.eyeContact === 'negative' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                <h3 className="font-semibold mb-2">👁️ Eye Contact</h3>
+                <p>{liveFeedbackText.eyeContact}</p>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-semibold mb-2">👁️ Eye Contact</h4>
-                  <p>{liveFeedbackText.eyeContact}</p>
-                </div>
-                
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-semibold mb-2">🙂 Facial Expressions</h4>
-                  <p>{liveFeedbackText.expressions}</p>
-                </div>
-                
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-semibold mb-2">🧍 Posture</h4>
-                  <p>{liveFeedbackText.posture}</p>
-                </div>
-                
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-semibold mb-2">🎤 Voice & Clarity</h4>
-                  <p>{liveFeedbackText.voice}</p>
-                </div>
+              <div className={`p-4 rounded-lg ${feedbackStatus.expressions === 'positive' ? 'bg-green-100' : feedbackStatus.expressions === 'warning' ? 'bg-yellow-100' : feedbackStatus.expressions === 'negative' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                <h3 className="font-semibold mb-2">😊 Expressions</h3>
+                <p>{liveFeedbackText.expressions}</p>
+              </div>
+              
+              <div className={`p-4 rounded-lg ${feedbackStatus.posture === 'positive' ? 'bg-green-100' : feedbackStatus.posture === 'warning' ? 'bg-yellow-100' : feedbackStatus.posture === 'negative' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                <h3 className="font-semibold mb-2">🧍 Posture</h3>
+                <p>{liveFeedbackText.posture}</p>
+              </div>
+              
+              <div className={`p-4 rounded-lg ${feedbackStatus.voice === 'positive' ? 'bg-green-100' : feedbackStatus.voice === 'warning' ? 'bg-yellow-100' : feedbackStatus.voice === 'negative' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                <h3 className="font-semibold mb-2">🔊 Voice</h3>
+                <p>{liveFeedbackText.voice}</p>
+              </div>
+              
+              <div className="col-span-1 md:col-span-2 text-xs text-gray-500 text-right">
+                Last updated: {lastUpdateTime || 'Not yet'}
               </div>
             </div>
           )}
 
           {/* Analysis Results - Shown after recording is stopped */}
-          {showFeedback && state.feedback && state.status !== 'recording' && (
+          {showFeedback && state.feedback && state.feedback.session_summary && state.status !== 'recording' && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">Session Summary</h3>
               
-              {/* Eye Contact */}
-              <div className="p-4 bg-gray-100 rounded-lg">
+              {/* Eye Contact Summary */}
+              <div className={`p-4 rounded-lg ${
+                state.feedback.session_summary.eyeContact.status === 'positive' ? 'bg-green-100' : 
+                state.feedback.session_summary.eyeContact.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              }`}>
                 <h3 className="font-semibold mb-2">👁️ Eye Contact</h3>
-                <p>{state.feedback.raw_feedback?.gemini_feedback?.eye_contact_feedback || "No data available"}</p>
+                <p>{state.feedback.session_summary.eyeContact.message}</p>
               </div>
               
-              {/* Posture */}
-              <div className="p-4 bg-gray-100 rounded-lg">
+              {/* Expressions Summary */}
+              <div className={`p-4 rounded-lg ${
+                state.feedback.session_summary.expressions.status === 'positive' ? 'bg-green-100' : 
+                state.feedback.session_summary.expressions.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              }`}>
+                <h3 className="font-semibold mb-2">😊 Expressions</h3>
+                <p>{state.feedback.session_summary.expressions.message}</p>
+              </div>
+              
+              {/* Posture Summary */}
+              <div className={`p-4 rounded-lg ${
+                state.feedback.session_summary.posture.status === 'positive' ? 'bg-green-100' : 
+                state.feedback.session_summary.posture.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              }`}>
                 <h3 className="font-semibold mb-2">🧍 Posture</h3>
-                <p>{state.feedback.raw_feedback?.gemini_feedback?.posture_feedback || "No data available"}</p>
+                <p>{state.feedback.session_summary.posture.message}</p>
               </div>
               
-              {/* Voice */}
-              <div className="p-4 bg-gray-100 rounded-lg">
-                <h3 className="font-semibold mb-2">🎤 Voice & Clarity</h3>
-                <p>{state.feedback.raw_feedback?.gemini_feedback?.voice_feedback || "No data available"}</p>
+              {/* Voice Summary */}
+              <div className={`p-4 rounded-lg ${
+                state.feedback.session_summary.voice.status === 'positive' ? 'bg-green-100' : 
+                state.feedback.session_summary.voice.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              }`}>
+                <h3 className="font-semibold mb-2">🔊 Voice</h3>
+                <p>{state.feedback.session_summary.voice.message}</p>
               </div>
               
-              {/* Emotion & Sentiment */}
-              <div className="p-4 bg-gray-100 rounded-lg">
-                <h3 className="font-semibold mb-2">😊 Emotion & Sentiment</h3>
-                <p>Detected emotion: {state.feedback.sentiment?.label || "neutral"}</p>
-                <p>{state.feedback.raw_feedback?.gemini_feedback?.expression_feedback || "No data available"}</p>
-              </div>
-              
-              {/* Overall Suggestion */}
-              <div className="p-4 bg-blue-100 rounded-lg">
-                <h3 className="font-semibold mb-2">💡 Overall Suggestion</h3>
-                <p>{state.feedback.raw_feedback?.gemini_feedback?.overall_suggestion || "Keep practicing to improve your presentation skills."}</p>
+              {/* Overall Summary */}
+              <div className={`p-4 rounded-lg ${
+                state.feedback.session_summary.overall.status === 'positive' ? 'bg-blue-100' : 
+                state.feedback.session_summary.overall.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              }`}>
+                <h3 className="font-semibold mb-2">💡 Overall Assessment</h3>
+                <p>{state.feedback.session_summary.overall.message}</p>
               </div>
             </div>
           )}

@@ -40,11 +40,11 @@ def get_gemini_feedback(emotion, eye_contact, posture, transcript):
             expression_feedback = "Try to vary your expressions to engage your audience better."
             
         if eye_contact == "yes":
-            eye_contact_feedback = "Great eye contact! You're connecting well with your audience."
+            eye_contact_feedback = "Excellent eye contact! You're connecting well with your audience."
         elif eye_contact == "limited":
-            eye_contact_feedback = "Look directly at the camera to better connect with your audience."
+            eye_contact_feedback = "Try looking directly at the camera lens more consistently. Position yourself so your eyes are level with the camera."
         else:
-            eye_contact_feedback = "Try to maintain consistent eye contact with the camera."
+            eye_contact_feedback = "Try to maintain consistent eye contact with the camera lens."
             
         if posture == "good":
             posture_feedback = "Your posture is excellent. You appear confident and engaged."
@@ -125,3 +125,111 @@ Remember: Be extremely concise. No explanations needed.
             "voice_feedback": f"Speech detected: {transcript or 'None'}. Speak clearly.",
             "overall_suggestion": "Engage more with your audience."
         }
+
+# Add a new function to generate session summaries
+def get_session_summary(metrics):
+    """Generate a comprehensive session summary based on collected metrics"""
+    logger.info(f"[GEMINI] Generating session summary from metrics: {metrics}")
+    
+    summary = {}
+    
+    # Eye contact summary
+    eye_contact = metrics.get("eye_contact", {})
+    eye_contact_total = eye_contact.get("total", 0)
+    eye_contact_good = eye_contact.get("yes", 0)
+    
+    if eye_contact_total > 0:
+        eye_contact_ratio = eye_contact_good / eye_contact_total
+        
+        if eye_contact_ratio >= 0.7:
+            eye_contact_feedback = "Excellent eye contact throughout your session. You consistently engaged with the camera."
+        elif eye_contact_ratio >= 0.4:
+            eye_contact_feedback = "Your eye contact was inconsistent. Try to maintain more consistent eye contact with the camera."
+        else:
+            eye_contact_feedback = "Your eye contact needs improvement. Practice looking directly at the camera lens more consistently."
+    else:
+        eye_contact_feedback = "No eye contact data available for this session."
+    
+    # Emotion summary
+    emotion = metrics.get("emotion", {})
+    emotion_total = emotion.get("total", 0)
+    emotion_happy = emotion.get("happy", 0)
+    emotion_neutral = emotion.get("neutral", 0)
+    
+    if emotion_total > 0:
+        emotion_positive_ratio = emotion_happy / emotion_total
+        emotion_neutral_ratio = emotion_neutral / emotion_total
+        
+        if emotion_positive_ratio >= 0.6:
+            emotion_feedback = "Great facial expressions! You showed positive engagement throughout your presentation."
+        elif emotion_neutral_ratio >= 0.7:
+            emotion_feedback = "Your expressions were mostly neutral. Try to add more varied expressions to engage your audience."
+        else:
+            emotion_feedback = "Your expressions could use improvement. Practice showing more positive and engaging expressions."
+    else:
+        emotion_feedback = "No expression data available for this session."
+    
+    # Posture summary
+    posture = metrics.get("posture", {})
+    posture_total = posture.get("total", 0)
+    posture_good = posture.get("good", 0)
+    
+    if posture_total > 0:
+        posture_ratio = posture_good / posture_total
+        
+        if posture_ratio >= 0.7:
+            posture_feedback = "Excellent posture throughout your presentation. You appeared confident and professional."
+        elif posture_ratio >= 0.4:
+            posture_feedback = "Your posture was inconsistent. Remember to maintain good posture throughout your presentation."
+        else:
+            posture_feedback = "Your posture needs improvement. Practice standing/sitting straight with shoulders back."
+    else:
+        posture_feedback = "No posture data available for this session."
+    
+    # Audio quality summary
+    audio = metrics.get("audio_quality", {})
+    audio_total = audio.get("total", 0)
+    audio_good = audio.get("good", 0) + audio.get("excellent", 0)
+    
+    if audio_total > 0:
+        audio_ratio = audio_good / audio_total
+        
+        if audio_ratio >= 0.7:
+            audio_feedback = "Excellent voice projection and clarity throughout your presentation."
+        elif audio_ratio >= 0.4:
+            audio_feedback = "Your voice projection was inconsistent. Practice maintaining consistent volume and clarity."
+        else:
+            audio_feedback = "Your voice projection needs improvement. Practice speaking louder and more clearly."
+    else:
+        audio_feedback = "No audio quality data available for this session."
+    
+    # Overall assessment
+    overall_scores = []
+    if eye_contact_total > 0:
+        overall_scores.append(eye_contact_ratio)
+    if emotion_total > 0:
+        overall_scores.append(emotion_positive_ratio)
+    if posture_total > 0:
+        overall_scores.append(posture_ratio)
+    if audio_total > 0:
+        overall_scores.append(audio_ratio)
+    
+    if overall_scores:
+        overall_score = sum(overall_scores) / len(overall_scores)
+        
+        if overall_score >= 0.7:
+            overall_feedback = "Great job! You demonstrated strong presentation skills overall. Keep up the good work!"
+        elif overall_score >= 0.4:
+            overall_feedback = "Your presentation skills are developing well. Focus on consistency in all areas for improvement."
+        else:
+            overall_feedback = "Your presentation skills need more practice. Focus on the specific areas highlighted for improvement."
+    else:
+        overall_feedback = "Not enough data to provide an overall assessment."
+    
+    return {
+        "eye_contact_feedback": eye_contact_feedback,
+        "expression_feedback": emotion_feedback,
+        "posture_feedback": posture_feedback,
+        "voice_feedback": audio_feedback,
+        "overall_suggestion": overall_feedback
+    }

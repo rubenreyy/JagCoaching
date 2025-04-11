@@ -131,7 +131,7 @@ def detect_eye_contact(frame):
                 
                 if len(opencv_faces) == 0:
                     logger.info("[FACE] No face detected in frame with any method")
-                    return "limited"
+                    return "limited"  # No face detected means no eye contact
                 else:
                     # Convert OpenCV face to dlib rectangle
                     dlib_faces = []
@@ -168,24 +168,33 @@ def detect_eye_contact(frame):
             left_eye_center = left_eye_pts.mean(axis=0).astype("int")
             right_eye_center = right_eye_pts.mean(axis=0).astype("int")
             
-            # Calculate face center
-            face_center_x = (face.left() + face.right()) // 2
-            face_center_y = (face.top() + face.bottom()) // 2
+            # Get frame dimensions for relative positioning
+            frame_height, frame_width = frame.shape[:2]
+            frame_center_x = frame_width // 2
+            frame_center_y = frame_height // 2
             
-            # FIXED: Corrected logic for eye contact detection
-            # When looking at camera, eyes should be more centered in the face
-            left_eye_offset = abs(left_eye_center[0] - face_center_x)
-            right_eye_offset = abs(right_eye_center[0] - face_center_x)
-            vertical_offset = abs((left_eye_center[1] + right_eye_center[1])/2 - face_center_y)
+            # Calculate average eye position relative to frame center
+            eye_center_x = (left_eye_center[0] + right_eye_center[0]) // 2
+            eye_center_y = (left_eye_center[1] + right_eye_center[1]) // 2
             
-            # Adjusted thresholds and corrected logic
-            # When looking directly at camera, offsets should be SMALLER
-            if left_eye_offset < 25 and right_eye_offset < 25 and vertical_offset < 35:
-                logger.info("[FACE] Good eye contact detected - eyes centered")
+            # Calculate distance from center as percentage of frame dimensions
+            x_offset_percent = abs(eye_center_x - frame_center_x) / (frame_width * 0.5)
+            y_offset_percent = abs(eye_center_y - frame_center_y) / (frame_height * 0.5)
+            
+            # Log values for debugging
+            logger.debug(f"[FACE] Eye center: ({eye_center_x}, {eye_center_y}), Frame center: ({frame_center_x}, {frame_center_y})")
+            logger.debug(f"[FACE] Offset percentages: x={x_offset_percent:.2f}, y={y_offset_percent:.2f}")
+            
+            # Make thresholds much stricter - if eyes are within 25% of center horizontally and 30% vertically
+            if x_offset_percent < 0.25 and y_offset_percent < 0.30:
+                logger.info("[FACE] Good eye contact detected - eyes aligned with camera")
                 return "yes"
             else:
-                logger.info("[FACE] Limited eye contact detected - eyes not centered")
+                logger.info("[FACE] Limited eye contact detected - eyes not aligned with camera")
                 return "limited"
+        
+        # If we get here, we didn't find good eye contact in any face
+        return "limited"
             
     except Exception as e:
         logger.error(f"[FACE] Eye contact detection error: {e}", exc_info=True)

@@ -34,9 +34,18 @@ const CameraStream = ({ onError, isRecording }) => {
     const startCamera = async () => {
       try {
         console.log('Starting camera...');
+        // Request audio with specific constraints for better sensitivity
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: true,
-          audio: true
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            // Increase sensitivity
+            volume: 1.0,
+            sampleRate: 44100,
+            sampleSize: 16
+          }
         });
         
         if (videoRef.current) {
@@ -106,43 +115,71 @@ const CameraStream = ({ onError, isRecording }) => {
     }
   }, [sendVideoFrame]);
 
-  // Send collected audio data to the server
-  const sendAudioData = useCallback(() => {
+  // Ensure audio chunks are being collected
+  useEffect(() => {
+    if (isRecording && mediaRecorderRef.current) {
+      // Log audio collection status
+      console.log('Audio recording active:', 
+        mediaRecorderRef.current.state === 'recording',
+        'Chunks:', audioChunksRef.current.length);
+      
+      // Make sure we're collecting audio data
+      if (mediaRecorderRef.current.state !== 'recording') {
+        try {
+          mediaRecorderRef.current.start(1000);
+          console.log('Restarted audio recording');
+        } catch (err) {
+          console.error('Error restarting audio recording:', err);
+        }
+      }
+    }
+  }, [isRecording]);
+
+  // Improved audio sending function
+  const sendAudioChunks = useCallback(() => {
+    if (!isRecording || !isConnected || audioChunksRef.current.length === 0) {
+      return;
+    }
+    
     try {
-      if (audioChunksRef.current.length === 0) {
-        console.log('No audio chunks to send');
-        return;
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      console.log(`Preparing to send audio: ${(audioBlob.size / 1024).toFixed(2)} KB`);
+      
+      if (audioBlob.size > 0) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Audio = reader.result;
+          sendAudioChunk(base64Audio);
+          console.log(`Sent audio chunk: ${(base64Audio.length / 1024).toFixed(2)} KB`);
+          // Clear chunks after sending
+          audioChunksRef.current = [];
+        };
+        reader.readAsDataURL(audioBlob);
+      }
+    } catch (err) {
+      console.error('Error sending audio chunks:', err);
+    }
+  }, [isRecording, isConnected, sendAudioChunk]);
+
+  // Set up audio sending interval
+  useEffect(() => {
+    if (isRecording && isConnected) {
+      if (audioIntervalRef.current) {
+        clearInterval(audioIntervalRef.current);
       }
       
-      console.log(`Preparing to send ${audioChunksRef.current.length} audio chunks`);
+      audioIntervalRef.current = setInterval(() => {
+        sendAudioChunks();
+      }, AUDIO_CHUNK_SIZE);
       
-      // Create a blob from the audio chunks
-      const audioBlob = new Blob(audioChunksRef.current);
-      console.log(`Audio blob size: ${audioBlob.size} bytes`);
-      
-      // Convert blob to base64
-      const reader = new FileReader();
-      
-      reader.onloadend = () => {
-        const base64Audio = reader.result;
-        console.log(`Sending audio chunk: ${Math.round(base64Audio.length / 1024)} KB`);
-        
-        // Send the audio data to the server if connected
-        if (isConnected) {
-          sendAudioChunk(base64Audio);
-        } else {
-          console.log('Not sending audio: WebSocket not connected');
+      return () => {
+        if (audioIntervalRef.current) {
+          clearInterval(audioIntervalRef.current);
+          audioIntervalRef.current = null;
         }
-        
-        // Clear the audio chunks after sending
-        audioChunksRef.current = [];
       };
-      
-      reader.readAsDataURL(audioBlob);
-    } catch (error) {
-      console.error('Error sending audio data:', error);
     }
-  }, [sendAudioChunk, isConnected]);
+  }, [isRecording, isConnected, sendAudioChunks]);
 
   // Start/stop recording based on isRecording prop
   useEffect(() => {
@@ -172,6 +209,22 @@ const CameraStream = ({ onError, isRecording }) => {
             return;
           }
           
+          // Try to increase audio gain if possible
+          try {
+            const audioTrack = audioTracks[0];
+            const capabilities = audioTrack.getCapabilities();
+            console.log('Audio capabilities:', capabilities);
+            
+            if (capabilities && capabilities.volume) {
+              const constraints = { volume: 1.0 }; // Max volume
+              audioTrack.applyConstraints({ advanced: [constraints] })
+                .then(() => console.log('Applied audio constraints successfully'))
+                .catch(err => console.warn('Could not apply audio constraints:', err));
+            }
+          } catch (err) {
+            console.warn('Error adjusting audio track settings:', err);
+          }
+          
           // Try different MIME types
           const mimeTypes = [
             'audio/webm',
@@ -196,11 +249,10 @@ const CameraStream = ({ onError, isRecording }) => {
           
           console.log(`Using MIME type: ${selectedMimeType}`);
           
-          // Create a new MediaRecorder with the full stream (not just audio)
-          // This can help with compatibility issues on some browsers
+          // Create a new MediaRecorder with higher bitrate for better quality
           const mediaRecorder = new MediaRecorder(streamRef.current, {
             mimeType: selectedMimeType,
-            audioBitsPerSecond: 128000
+            audioBitsPerSecond: 256000  // Increased from 128000
           });
           
           // Set up event handlers
@@ -222,17 +274,6 @@ const CameraStream = ({ onError, isRecording }) => {
           mediaRecorder.start(1000); // Request data every 1 second
           mediaRecorderRef.current = mediaRecorder;
           
-          // Set up interval to send audio chunks
-          if (audioIntervalRef.current) {
-            clearInterval(audioIntervalRef.current);
-          }
-          
-          audioIntervalRef.current = setInterval(() => {
-            if (audioChunksRef.current.length > 0) {
-              sendAudioData();
-            }
-          }, 3000); // Send audio every 3 seconds
-          
         } catch (error) {
           console.error('Error starting recording:', error);
           if (onError) onError('Failed to start audio recording: ' + error.message);
@@ -247,12 +288,6 @@ const CameraStream = ({ onError, isRecording }) => {
         captureIntervalRef.current = null;
       }
       
-      // Stop audio interval
-      if (audioIntervalRef.current) {
-        clearInterval(audioIntervalRef.current);
-        audioIntervalRef.current = null;
-      }
-      
       // Stop audio recording
       if (mediaRecorderRef.current) {
         try {
@@ -260,11 +295,6 @@ const CameraStream = ({ onError, isRecording }) => {
           
           if (mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
-          }
-          
-          // Send any remaining audio data
-          if (audioChunksRef.current.length > 0) {
-            sendAudioData();
           }
         } catch (error) {
           console.warn('Error stopping media recorder:', error);
@@ -277,12 +307,8 @@ const CameraStream = ({ onError, isRecording }) => {
       if (captureIntervalRef.current) {
         clearInterval(captureIntervalRef.current);
       }
-      
-      if (audioIntervalRef.current) {
-        clearInterval(audioIntervalRef.current);
-      }
     };
-  }, [isRecording, isConnected, captureAndSendFrame, sendAudioData, onError]);
+  }, [isRecording, isConnected, captureAndSendFrame, onError]);
 
   return (
     <div className="relative w-full h-full">

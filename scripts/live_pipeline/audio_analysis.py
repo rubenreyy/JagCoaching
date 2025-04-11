@@ -34,13 +34,16 @@ def record_audio(duration=5):
         
         # Normalize audio to increase volume
         audio = audio_data.flatten()
-        if np.max(np.abs(audio)) > 0:
-            # Apply some gain to make quiet speech more detectable
-            audio = audio * 1.5
+        max_amplitude = np.max(np.abs(audio))
+        
+        if max_amplitude > 0:
+            # Apply much higher gain to make quiet speech more detectable
+            # Increase from 1.5 to 5.0 for better sensitivity
+            audio = audio * 5.0
             # Clip to prevent distortion
             audio = np.clip(audio, -1.0, 1.0)
             
-        logger.info(f"Recorded audio with max amplitude: {np.max(np.abs(audio))}")
+        logger.info(f"Recorded audio with max amplitude: {max_amplitude}")
         return audio
     except Exception as e:
         logger.error(f"Error recording audio: {e}")
@@ -65,70 +68,123 @@ def transcribe_audio(audio_data):
             try:
                 # Check if it's a base64 string
                 if audio_data.startswith('data:audio'):
-                    try:
-                        # Extract the base64 part
-                        import base64
-                        import re
-                        
-                        base64_data = re.sub('^data:audio/.+;base64,', '', audio_data)
-                        audio_bytes = base64.b64decode(base64_data)
-                        
-                        # Convert to numpy array
-                        import io
-                        import soundfile as sf
-                        
-                        with io.BytesIO(audio_bytes) as buf:
-                            audio_array, sample_rate = sf.read(buf)
-                            logger.info(f"Loaded audio with shape {audio_array.shape}, sample rate {sample_rate}")
-                        
-                        # Check if there's actual audio content
-                        if np.max(np.abs(audio_array)) < 0.01:
-                            logger.warning("Audio too quiet, no transcription attempted")
-                            return "Audio too quiet - please speak louder"
-                            
-                        # Continue with transcription using the loaded audio
-                        # Use Whisper or other transcription service here
-                        # For now, we'll detect if there's speech based on audio levels
-                        if np.max(np.abs(audio_array)) > 0.05:
-                            logger.info("Detected clear speech in audio")
-                            return "Speech detected, clear and audible"
-                        elif np.max(np.abs(audio_array)) > 0.02:
-                            logger.info("Detected quiet speech in audio")
-                            return "Speech detected, but volume is low"
-                        else:
-                            logger.info("Detected very quiet speech in audio")
-                            return "Speech barely audible - please speak louder"
-                        
-                    except Exception as e:
-                        logger.error(f"Error processing audio data: {e}")
-                        return "Error processing audio"
+                    import base64
+                    import re
+                    
+                    # Extract the base64 part
+                    base64_data = re.sub('^data:audio/.+;base64,', '', audio_data)
+                    audio_bytes = base64.b64decode(base64_data)
+                    
+                    # Convert to numpy array
+                    import io
+                    import wave
+                    
+                    with io.BytesIO(audio_bytes) as wav_io:
+                        with wave.open(wav_io, 'rb') as wav_file:
+                            frames = wav_file.getnframes()
+                            audio_data = np.frombuffer(wav_file.readframes(frames), dtype=np.int16).astype(np.float32) / 32768.0
+                    
+                    # Apply gain to the converted audio data
+                    audio_data = audio_data * 5.0
+                    audio_data = np.clip(audio_data, -1.0, 1.0)
+                    
+                    logger.info(f"Successfully converted base64 audio to numpy array, shape: {audio_data.shape}")
+                else:
+                    logger.warning("Audio data is a string but not in expected base64 format")
+                    return "Could not process audio format"
             except Exception as e:
-                logger.error(f"Error decoding base64 audio: {e}")
-                return "Error decoding audio"
+                logger.error(f"Error processing base64 audio: {e}")
+                return "Error processing audio"
         
-        # Handle numpy array from direct recording
-        elif isinstance(audio_data, np.ndarray):
-            # Check if there's actual audio content
-            max_amplitude = np.max(np.abs(audio_data))
-            logger.info(f"Audio max amplitude: {max_amplitude}")
-            
-            if max_amplitude < 0.01:
-                logger.warning("Audio too quiet, no transcription attempted")
-                return "Audio too quiet - please speak louder"
-            elif max_amplitude < 0.03:
-                logger.info("Audio detected but quiet")
-                return "Speech detected, but volume is low - speak louder"
-            elif max_amplitude < 0.1:
-                logger.info("Audio detected with moderate volume")
-                return "Speech detected with good volume"
+        # Check if we have valid audio data
+        if not isinstance(audio_data, np.ndarray):
+            logger.warning(f"Invalid audio data type: {type(audio_data)}")
+            return "No speech detected"
+        
+        # Check audio volume
+        max_amplitude = np.max(np.abs(audio_data))
+        logger.info(f"Audio max amplitude: {max_amplitude}")
+        
+        # Calculate non-zero ratio
+        non_zero_ratio = np.count_nonzero(audio_data) / audio_data.size
+        logger.info(f"Non-zero audio ratio: {non_zero_ratio:.4f}")
+        
+        # Calculate standard deviation to detect consistent speech vs random noise
+        std_dev = np.std(audio_data)
+        logger.info(f"Audio standard deviation: {std_dev:.6f}")
+        
+        # Calculate energy distribution across the sample
+        # Split audio into segments and check if energy is distributed evenly (speech)
+        # or concentrated in short bursts (random noises)
+        segments = np.array_split(audio_data, 20)  # Split into 20 segments for finer analysis
+        segment_energies = [np.sum(np.abs(segment)) for segment in segments]
+        energy_std = np.std(segment_energies)
+        energy_mean = np.mean(segment_energies)
+        energy_cv = energy_std / energy_mean if energy_mean > 0 else 0  # Coefficient of variation
+        logger.info(f"Energy distribution CV: {energy_cv:.4f}")
+        
+        # Calculate zero-crossing rate (higher for speech)
+        zero_crossings = np.sum(np.abs(np.diff(np.signbit(audio_data)))) / len(audio_data)
+        logger.info(f"Zero crossing rate: {zero_crossings:.4f}")
+        
+        # Calculate spectral centroid (measure of "brightness" of sound)
+        # Higher for speech with consonants, lower for ambient noise
+        if len(audio_data) > 0:
+            # Simple spectral analysis
+            from scipy import signal
+            frequencies, power_spectrum = signal.welch(audio_data, fs=SAMPLE_RATE, nperseg=1024)
+            if np.sum(power_spectrum) > 0:
+                spectral_centroid = np.sum(frequencies * power_spectrum) / np.sum(power_spectrum)
+                logger.info(f"Spectral centroid: {spectral_centroid:.2f} Hz")
             else:
-                logger.info("Audio detected with strong volume")
-                return "Speech detected with excellent projection"
-            
+                spectral_centroid = 0
+                logger.info("No significant spectral content")
         else:
-            logger.warning(f"Unsupported audio data type: {type(audio_data)}")
-            return "Unsupported audio format"
-            
+            spectral_centroid = 0
+        
+        # MUCH more aggressive speech detection
+        # Combination of factors to detect actual speech vs background noise
+        
+        # 1. Check for actual speech patterns using multiple metrics
+        is_speech = False
+        
+        # Speech typically has:
+        # - Higher amplitude variations (std_dev > 0.003)
+        # - More consistent energy across segments (energy_cv < 0.8)
+        # - Higher zero-crossing rate (> 0.03 for speech)
+        # - Spectral centroid in speech range (300-3000 Hz)
+        
+        if (std_dev > 0.003 and 
+            energy_cv < 0.8 and 
+            zero_crossings > 0.03 and 
+            300 < spectral_centroid < 3000):
+            is_speech = True
+            logger.info("Speech pattern detected based on audio characteristics")
+        
+        # 2. Check for minimum amplitude threshold (much higher than before)
+        if max_amplitude < 0.01:
+            logger.info("Audio level too low for clear speech")
+            return "No speech detected - please speak up"
+        
+        # 3. If we don't detect speech patterns, it's likely background noise
+        if not is_speech:
+            logger.info("No speech pattern detected - likely background noise")
+            return "No speech detected - please speak up"
+        
+        # Now assess the quality of detected speech
+        if max_amplitude < 0.02:
+            logger.info("Audio detected but quiet")
+            return "Speech detected, but volume is low - speak louder"
+        elif max_amplitude < 0.05:
+            logger.info("Audio level acceptable")
+            return "Good volume level - speech is clear"
+        elif max_amplitude < 0.1:
+            logger.info("Audio level good")
+            return "Excellent voice projection - very clear speech"
+        else:
+            logger.info("Audio level possibly too loud")
+            return "Volume may be too loud - consider speaking a bit softer"
+        
     except Exception as e:
-        logger.error(f"Error in transcribe_audio: {e}", exc_info=True)
-        return "Speech analysis in progress..."
+        logger.error(f"Error transcribing audio: {e}")
+        return "Error processing audio"
