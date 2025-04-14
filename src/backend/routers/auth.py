@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 load_dotenv("./.env.development")
 
 router = APIRouter(
-    prefix="/api",
     tags=["auth"],
     responses={404: {"description": "Not found"}, 422: {"description": "Validation Error"}, 401: {"description": "Unauthorized"}},
 )
@@ -130,7 +129,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 # TODO: Make Logout Function 
 # Logout endpoint
-@router.post("/api/logout/")
+@router.post("/logout/")
 async def logout(current_user: UserInDB = Depends(get_current_user)):
     print(current_user)
     return {"status": "success", "message": "Logout successful!"}

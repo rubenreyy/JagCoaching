@@ -60,10 +60,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Include the routers in the main FastAPI application
-app.include_router(users_router)
-app.include_router(auth_router)
-app.include_router(videos_router)
-app.include_router(live_router.router)
+app.include_router(users_router, prefix='/api')
+app.include_router(auth_router, prefix='/api')
+app.include_router(videos_router, prefix='/api')
+app.include_router(live_router.router, prefix='/api')
 
 # Added CORS middleware to allow cross-origin requests from the frontend
 app.add_middleware(
