@@ -11,8 +11,8 @@ bcrypt==4.3.0
 cryptography==44.0.2
 email_validator==2.2.0
 python-multipart==0.0.20
-anyio==4.9.0
-starlette==0.27.0
+anyio>=3.7.1,<5
+starlette==0.36.3
 h11==0.14.0
 gunicorn==23.0.0
 
