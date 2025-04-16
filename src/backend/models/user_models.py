@@ -106,6 +106,26 @@ class TokenData(BaseModel):
     username: str | None = None
 
 
+# Refresh Token Model
+class RefreshToken(BaseModel):
+    """Model for refresh tokens"""
+    token_hash: str
+    user_id: str
+    expires_at: datetime
+    device_info: Optional[dict] = None
+
+
+# Phase 4: Session Model
+class Session(BaseModel):
+    """Model for user sessions"""
+    session_id: str
+    user_id: str
+    ip_address: Optional[str]
+    device_info: Optional[dict] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_active: datetime = Field(default_factory=datetime.utcnow)
+
+
 # Test user data for account page
 test_user = {
     "username": "jagcoaching",

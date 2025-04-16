@@ -65,15 +65,16 @@ app.include_router(auth_router)
 app.include_router(videos_router)
 app.include_router(live_router.router)
 
-# Added CORS middleware to allow cross-origin requests from the frontend
+# Get allowed origins from environment or use defaults
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
+# Update the CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=600,
 )
 
 @app.get("/")
