@@ -1,9 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 
-# models old temp
 
-
+# File & Upload Schemas
 class FileName(BaseModel):
     file_name: str
 
@@ -13,30 +12,35 @@ class UploadResponse(BaseModel):
     status: str
 
 
-# User schemas
+# -------------------------------
+# User Schemas
+# -------------------------------
 
-
-class user(BaseModel):
+class UserBase(BaseModel):
     username: str
-    email: str
+    email: EmailStr
 
 
-class UserCreate(user):
+class UserCreate(UserBase):
     password: str
 
 
-class User(user):
+class User(UserBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True  # used to support ORM response models
+    }
 
 
 class UserInDB(User):
     hashed_password: str
 
 
-# Auth schemas
+# -------------------------------
+# Authentication Schemas
+# -------------------------------
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -46,7 +50,10 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
-# Video schemas
+# -------------------------------
+# Video Schemas
+# -------------------------------
+
 class VideoBase(BaseModel):
     title: str
     description: Optional[str] = None
@@ -59,11 +66,15 @@ class VideoCreate(VideoBase):
 class Video(VideoBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
-# Feedback schemas
+# -------------------------------
+# Feedback Schemas
+# -------------------------------
+
 class Feedback(BaseModel):
     transcript: str
     sentiment: str

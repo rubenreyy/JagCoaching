@@ -1,18 +1,12 @@
 from datetime import datetime
 from pathlib import Path
-import uuid
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from bson import ObjectId
 
-# -- INFO: Models for video data and processing -- #
 
-# PyObjectId class for handling MongoDB ObjectId
+# PyObjectId for MongoDB integration
 class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
     @classmethod
     def validate(cls, v):
         if not ObjectId.is_valid(v):
@@ -20,29 +14,29 @@ class PyObjectId(ObjectId):
         return ObjectId(v)
 
     @classmethod
-    def __get_pydantic_json_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    def __get_pydantic_json_schema__(cls, _schema_generator):
+        return {"type": "string"}
 
-# Base Video model
+
+# Shared base model for video info
 class VideoBase(BaseModel):
     title: str
     description: Optional[str] = ""
     tags: Optional[List[str]] = []
     user_id: Optional[str] = None
 
-# Model for creating a new video
+
 class VideoCreate(VideoBase):
     file_path: str
 
-# Model for updating a video
+
 class VideoUpdate(VideoBase):
     title: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None
-    
 
-    
-# Model for a video stored in the database
+
+# Database model for video
 class VideoInDB(VideoBase):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     file_path: str
@@ -53,11 +47,11 @@ class VideoInDB(VideoBase):
     transcription: Optional[str] = None
     speech_analysis: Optional[Dict[str, Any]] = None
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        json_schema_extra = {
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str},
+        "json_schema_extra": {
             "example": {
                 "_id": "60d5ec2af682fbedea4216c8",
                 "title": "Coaching Session 1",
@@ -73,8 +67,10 @@ class VideoInDB(VideoBase):
                 "speech_analysis": {"key_points": ["confidence", "clarity"]}
             }
         }
+    }
 
-# Model for returning video data
+
+# Public return model for frontend use
 class Video(VideoBase):
     id: str = Field(alias="_id")
     file_path: str
@@ -85,17 +81,19 @@ class Video(VideoBase):
     transcription: Optional[str] = None
     speech_analysis: Optional[Dict[str, Any]] = None
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str}
+    }
 
-# Helper functions for video processing
+
+# Utility for future expansion (could be moved to utils module)
 def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract basic metadata from the video file."""
     metadata = {}
-    if Path(file_path).exists():
-        metadata["size_bytes"] = Path(file_path).stat().st_size
-        # Note: Duration would typically require a library like moviepy or ffprobe
+    if file_path.exists():
+        metadata["size_bytes"] = file_path.stat().st_size
+        # Duration extraction could be added using moviepy or ffmpeg
         # metadata["duration_seconds"] = get_video_duration(file_path)
     return metadata

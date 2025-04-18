@@ -51,6 +51,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8000",
+        "ws://localhost:8000",
         "https://your-production-domain.com",
     ]
 
@@ -70,6 +71,11 @@ class Settings(BaseSettings):
         "OPTIONS",
         "PATCH"
     ]
+
+    # WebSocket Settings
+    WS_PING_INTERVAL: int = 30  # seconds
+    WS_PING_TIMEOUT: int = 10   # seconds
+    WS_MAX_MESSAGE_SIZE: int = 1024 * 1024  # 1MB
 
     class Config:
         env_file = str(env_path)

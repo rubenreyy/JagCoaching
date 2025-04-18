@@ -7,15 +7,14 @@ if sys.path.count(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspat
     sys.path.append(os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))))
 from config import settings
-from routers import auth_router , videos_router , users_router
+from routers import auth_router, videos_router, users_router, live_router
 import uvicorn
-from fastapi import FastAPI 
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 # Built-in imports
 from contextlib import asynccontextmanager
 from pathlib import Path
-
 
 import dotenv
 import logging
@@ -26,7 +25,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('app.log')
     ]
 )
 
@@ -35,13 +33,7 @@ logger = logging.getLogger(__name__)
 
 dotenv.load_dotenv("./env.development") # consolidated to one env folder
 
-# dotenv.load_dotenv("./src/backend/.env.development")
-
-# Local imports
-
-
 UPLOAD_DIR = settings.UPLOAD_FOLDER
-
 
 # Startup and shutdown event handlers for fastapi
 @asynccontextmanager
@@ -63,14 +55,14 @@ async def lifespan(app: FastAPI):
         logger.error(f"Error in lifespan: {str(e)}")
         raise
 
-
+# Create a single FastAPI app instance
 app = FastAPI(lifespan=lifespan)
 
-# TODO: Include the routers in the main FastAPI application when database is working
-app.include_router(users_router)
-app.include_router(auth_router)
-app.include_router(videos_router)
-
+# Include the routers in the main FastAPI application
+app.include_router(users_router, prefix='/api')
+app.include_router(auth_router, prefix='/api')
+app.include_router(videos_router, prefix='/api')
+app.include_router(live_router.router, prefix='/api')
 
 # Added CORS middleware to allow cross-origin requests from the frontend
 app.add_middleware(
@@ -79,28 +71,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
+    max_age=600,
 )
-
-# Add this before the CORS middleware
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
-
-    # allow_content_types=["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
-# Index route
-
-app = FastAPI()
 
 @app.get("/")
 async def index():
     return {"message": "Welcome to the JagCoaching API!"}
-
-# API route
-
 
 @app.get("/api/", response_description="API index route")
 async def apiroutes():
@@ -150,10 +127,6 @@ async def apiroutes():
         ],
         "version": "1.0"
     }
-
-
-
-
 
 # Run the FastAPI application
 if __name__ == "__main__":
