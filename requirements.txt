@@ -1,5 +1,5 @@
 # Core Dependencies
-fastapi==0.104.0
+fastapi==0.110.0
 uvicorn==0.23.2
 pydantic==2.11.3
 pydantic-core==2.33.1
@@ -11,8 +11,8 @@ bcrypt==4.3.0
 cryptography==44.0.2
 email_validator==2.2.0
 python-multipart==0.0.20
-anyio==4.9.0
-starlette==0.27.0
+anyio>=3.7.1,<5
+starlette==0.36.3
 h11==0.14.0
 gunicorn==23.0.0
 
@@ -24,7 +24,7 @@ dnspython==2.7.0
 websockets==14.2
 httptools==0.6.4
 watchfiles==1.0.5
-uvloop==0.21.0
+#uvloop==0.21.0
 wsproto==1.2.0
 
 # Base ML Dependencies
@@ -155,3 +155,6 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 threadpoolctl==3.6.0
 tzdata==2025.2
+
+python-pptx==0.6.21
+google-generativeai==0.3.1
