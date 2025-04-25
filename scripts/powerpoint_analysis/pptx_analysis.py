@@ -110,10 +110,10 @@ def analyze_presentation(file_path):
 
 # Example usage
 if __name__ == "__main__":
-    presentation_file = "C:/Users/Ruben/OneDrive/Documents/CS/Big Data/JagGradesPresentation.pptx"
+    '''presentation_file = "path/to/your/ppt.pptx"
     if os.path.exists(presentation_file):
         logger.info(f"Analyzing presentation: {presentation_file}")
         result = analyze_presentation(presentation_file)
         print(json.dumps(result, indent=4))
     else:
-        logger.error(f"Presentation file not found: {presentation_file}")
+        logger.error(f"Presentation file not found: {presentation_file}")'''
