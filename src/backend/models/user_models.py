@@ -48,8 +48,8 @@ class UserCreate(User):
 
 class UserLogin(BaseModel):
     """Model for user login credentials"""
-    email: EmailStr = Field(...)
-    password: str = Field(..., min_length=8)
+    email: EmailStr
+    password: str = Field(..., min_length=5)
 
     class Config:
         json_schema_extra = {
@@ -61,9 +61,9 @@ class UserLogin(BaseModel):
 
 
 class UserInDB(User):
-    """Model for user stored in database"""
+    """Model for user in database"""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    hashed_password: str
+    password: str  # Changed from hashed_password to password to match DB
     videos: List[str] = Field(default=[])
     preferences: Dict[str, str] = Field(default_factory=dict)
     last_login: Optional[datetime] = None

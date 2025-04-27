@@ -1,0 +1,114 @@
+2025-03-25 03:25:29,112 - main - INFO - Created directory: uploads
+2025-03-25 03:25:29,112 - main - INFO - Created directory: uploads/videos
+2025-03-25 03:25:29,112 - main - INFO - Created directory: uploads/videos/audio
+2025-03-25 03:25:33,258 - main - INFO - Shutting down...
+2025-03-25 03:25:46,586 - main - INFO - Created directory: uploads
+2025-03-25 03:25:46,586 - main - INFO - Created directory: uploads/videos
+2025-03-25 03:25:46,586 - main - INFO - Created directory: uploads/videos/audio
+2025-03-25 03:26:05,057 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67e22f7e0214b1272f827b21'), 'username': 'bro@gmail.com', 'email': 'bro@gmail.com', 'password': '$2b$12$ldSQb5AP.d..92xdY08VjurzB3S.upxz5blLazfEl2TIdcwzskvne', 'is_active': True, 'created_at': datetime.datetime(2025, 3, 24, 23, 22, 22, 599000)}
+2025-03-25 03:26:05,057 - routers.videos - INFO - File details - Filename: Student_3.mp4, Content-Type: video/mp4
+2025-03-25 03:26:05,057 - routers.videos - INFO - Creating upload directory
+2025-03-25 03:26:05,058 - routers.videos - INFO - Generated unique filename: c3247f65-c268-41ad-bd32-b09722211b9a.mp4
+2025-03-25 03:26:05,058 - routers.videos - INFO - Saving file to: uploads/videos/c3247f65-c268-41ad-bd32-b09722211b9a.mp4
+2025-03-25 03:26:05,068 - routers.videos - INFO - File saved successfully
+2025-03-25 03:26:05,068 - routers.videos - INFO - Connecting to database
+2025-03-25 03:26:05,703 - routers.videos - INFO - Video saved to database with ID: 67e2689ddf1463bed1f037ed
+2025-03-25 03:26:08,705 - routers.videos - INFO - Starting audio processing for file: c3247f65-c268-41ad-bd32-b09722211b9a.mp4
+2025-03-25 03:26:08,706 - routers.videos - INFO - Looking for video at: uploads/videos/c3247f65-c268-41ad-bd32-b09722211b9a.mp4
+2025-03-25 03:26:08,706 - routers.videos - INFO - Starting audio extraction...
+2025-03-25 03:26:08,706 - utils - INFO - Starting audio extraction from uploads/videos/c3247f65-c268-41ad-bd32-b09722211b9a.mp4
+2025-03-25 03:26:08,706 - utils - INFO - Created output directory: uploads/videos/audio
+2025-03-25 03:26:08,707 - utils - INFO - Will save audio to: uploads/videos/audio/c3247f65-c268-41ad-bd32-b09722211b9a.wav
+2025-03-25 03:26:09,232 - utils - INFO - Audio extraction completed: uploads/videos/audio/c3247f65-c268-41ad-bd32-b09722211b9a.wav
+2025-03-25 03:26:09,233 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/c3247f65-c268-41ad-bd32-b09722211b9a.wav
+2025-03-25 03:26:09,233 - routers.videos - INFO - Starting audio analysis...
+2025-03-25 03:26:09,233 - routers.videos - ERROR - Error processing audio: 'module' object is not callable
+Traceback (most recent call last):
+  File "/Users/andrewgonzalez/Desktop/JagCoaching/src/backend/routers/videos.py", line 129, in process_audio
+    analysis = SpeechAnalysisObject(str(audio_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'module' object is not callable
+2025-03-25 03:28:49,660 - main - INFO - Shutting down...
+2025-03-25 03:28:53,048 - main - INFO - Created directory: uploads
+2025-03-25 03:28:53,048 - main - INFO - Created directory: uploads/videos
+2025-03-25 03:28:53,048 - main - INFO - Created directory: uploads/videos/audio
+2025-03-25 03:29:39,531 - main - INFO - Shutting down...
+2025-03-25 03:29:42,887 - main - INFO - Created directory: uploads
+2025-03-25 03:29:42,888 - main - INFO - Created directory: uploads/videos
+2025-03-25 03:29:42,888 - main - INFO - Created directory: uploads/videos/audio
+2025-03-25 03:30:25,638 - main - INFO - Shutting down...
+2025-03-25 03:30:28,847 - main - INFO - Created directory: uploads
+2025-03-25 03:30:28,847 - main - INFO - Created directory: uploads/videos
+2025-03-25 03:30:28,847 - main - INFO - Created directory: uploads/videos/audio
+2025-03-25 03:30:35,740 - main - INFO - Shutting down...
+2025-03-25 03:30:40,806 - main - INFO - Created directory: uploads
+2025-03-25 03:30:40,806 - main - INFO - Created directory: uploads/videos
+2025-03-25 03:30:40,806 - main - INFO - Created directory: uploads/videos/audio
+2025-03-25 03:30:57,180 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67e22f7e0214b1272f827b21'), 'username': 'bro@gmail.com', 'email': 'bro@gmail.com', 'password': '$2b$12$ldSQb5AP.d..92xdY08VjurzB3S.upxz5blLazfEl2TIdcwzskvne', 'is_active': True, 'created_at': datetime.datetime(2025, 3, 24, 23, 22, 22, 599000)}
+2025-03-25 03:30:57,182 - routers.videos - INFO - File details - Filename: Student_3.mp4, Content-Type: video/mp4
+2025-03-25 03:30:57,182 - routers.videos - INFO - Creating upload directory
+2025-03-25 03:30:57,182 - routers.videos - INFO - Generated unique filename: db42dbe8-3236-4cdc-9350-8f0e1cee2722.mp4
+2025-03-25 03:30:57,182 - routers.videos - INFO - Saving file to: uploads/videos/db42dbe8-3236-4cdc-9350-8f0e1cee2722.mp4
+2025-03-25 03:30:57,190 - routers.videos - INFO - File saved successfully
+2025-03-25 03:30:57,190 - routers.videos - INFO - Connecting to database
+2025-03-25 03:30:57,826 - routers.videos - INFO - Video saved to database with ID: 67e269c16e5e2d2a062d2da8
+2025-03-25 03:30:59,742 - routers.videos - INFO - Starting audio processing for file: db42dbe8-3236-4cdc-9350-8f0e1cee2722.mp4
+2025-03-25 03:30:59,743 - routers.videos - INFO - Looking for video at: uploads/videos/db42dbe8-3236-4cdc-9350-8f0e1cee2722.mp4
+2025-03-25 03:30:59,743 - routers.videos - INFO - Starting audio extraction...
+2025-03-25 03:30:59,743 - utils - INFO - Starting audio extraction from uploads/videos/db42dbe8-3236-4cdc-9350-8f0e1cee2722.mp4
+2025-03-25 03:30:59,743 - utils - INFO - Created output directory: uploads/videos/audio
+2025-03-25 03:30:59,744 - utils - INFO - Will save audio to: uploads/videos/audio/db42dbe8-3236-4cdc-9350-8f0e1cee2722.wav
+2025-03-25 03:31:00,056 - utils - INFO - Audio extraction completed: uploads/videos/audio/db42dbe8-3236-4cdc-9350-8f0e1cee2722.wav
+2025-03-25 03:31:00,056 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/db42dbe8-3236-4cdc-9350-8f0e1cee2722.wav
+2025-03-25 03:31:00,056 - routers.videos - INFO - Starting audio analysis...
+2025-03-25 03:31:00,057 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/db42dbe8-3236-4cdc-9350-8f0e1cee2722.wav
+2025-03-25 03:31:00,057 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-03-25 03:31:01,655 - scripts.speech_analysis - INFO - Loading audio file...
+2025-03-25 03:31:02,436 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-03-25 03:31:02,487 - scripts.speech_analysis - INFO - Generating transcription...
+2025-03-26 14:18:35,389 - main - INFO - Created directory: uploads
+2025-03-26 14:18:35,389 - main - INFO - Created directory: uploads/videos
+2025-03-26 14:18:35,389 - main - INFO - Created directory: uploads/videos/audio
+2025-03-26 14:22:50,130 - main - INFO - Shutting down...
+2025-03-26 14:22:53,719 - main - INFO - Created directory: uploads
+2025-03-26 14:22:53,719 - main - INFO - Created directory: uploads/videos
+2025-03-26 14:22:53,719 - main - INFO - Created directory: uploads/videos/audio
+2025-03-26 14:22:59,685 - main - INFO - Shutting down...
+2025-03-26 14:23:06,552 - main - INFO - Created directory: uploads
+2025-03-26 14:23:06,552 - main - INFO - Created directory: uploads/videos
+2025-03-26 14:23:06,552 - main - INFO - Created directory: uploads/videos/audio
+2025-03-26 14:23:28,920 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67e22f7e0214b1272f827b21'), 'username': 'bro@gmail.com', 'email': 'bro@gmail.com', 'password': '$2b$12$ldSQb5AP.d..92xdY08VjurzB3S.upxz5blLazfEl2TIdcwzskvne', 'is_active': True, 'created_at': datetime.datetime(2025, 3, 24, 23, 22, 22, 599000)}
+2025-03-26 14:23:28,923 - routers.videos - INFO - File details - Filename: Student_3.mp4, Content-Type: video/mp4
+2025-03-26 14:23:28,925 - routers.videos - INFO - Creating upload directory
+2025-03-26 14:23:28,927 - routers.videos - INFO - Generated unique filename: e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:28,929 - routers.videos - INFO - Saving file to: uploads/videos/e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:28,944 - routers.videos - INFO - File saved successfully
+2025-03-26 14:23:28,944 - routers.videos - INFO - Connecting to database
+2025-03-26 14:23:29,645 - routers.videos - INFO - Video saved to database with ID: 67e4543151478aa2deb1ab0b
+2025-03-26 14:23:31,675 - routers.videos - INFO - Starting audio processing for file: e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:31,676 - routers.videos - INFO - Looking for video at: uploads/videos/e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:31,676 - routers.videos - INFO - Starting audio extraction...
+2025-03-26 14:23:31,676 - utils - INFO - Starting audio extraction from uploads/videos/e2a503bf-4fa4-42b2-93eb-86c04398fa54.mp4
+2025-03-26 14:23:31,676 - utils - INFO - Created output directory: uploads/videos/audio
+2025-03-26 14:23:31,676 - utils - INFO - Will save audio to: uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - utils - INFO - Audio extraction completed: uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - routers.videos - INFO - Starting audio analysis...
+2025-03-26 14:23:33,741 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/e2a503bf-4fa4-42b2-93eb-86c04398fa54.wav
+2025-03-26 14:23:33,741 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-03-26 14:23:35,349 - scripts.speech_analysis - INFO - Loading audio file...
+2025-03-26 14:23:43,490 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-03-26 14:23:43,556 - scripts.speech_analysis - INFO - Generating transcription...
+2025-03-26 15:04:46,948 - scripts.speech_analysis - INFO - Transcription completed successfully
+2025-03-26 15:05:12,613 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-03-26 15:05:12,614 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-03-26 15:05:40,432 - routers.videos - INFO - Audio analysis completed
+2025-03-26 15:05:40,433 - routers.videos - INFO - Updating database with analysis results...
+2025-03-26 15:05:41,243 - routers.videos - INFO - Database updated successfully
+2025-03-30 17:47:32,220 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:53:22,587 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:54:05,077 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:54:27,240 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 17:57:10,413 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 18:04:46,188 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'
+2025-03-30 18:09:48,375 - main - ERROR - Error in lifespan: [WinError 123] The filename, directory name, or volume label syntax is incorrect: '"uploads"  # Updated to include quotes for consistency'

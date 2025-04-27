@@ -11,6 +11,7 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 import json
+import logging
 # Load environment variables from .env file in scripts folder only
 load_dotenv("./.env.development")
 
@@ -27,6 +28,8 @@ device = "cuda:0" if torch.cuda.is_available() else "cpu"  # USE GPU IF AVAILABL
 
 # FIXME: Load audio librosa only once
 
+# Configure logging
+logger = logging.getLogger(__name__)
 
 @functools.lru_cache(maxsize=40)
 def load_librosa(audio_path):
@@ -41,30 +44,47 @@ def load_librosa(audio_path):
 
 def transcribe_speech(audio_path):
     """ Convert speech to text using Whisper """
-    model = "openai/whisper-large-v2"
-    processor = WhisperProcessor.from_pretrained(
-        model)  # English language code
-    model = WhisperForConditionalGeneration.from_pretrained(model)
-    model.config = WhisperConfig(torchscript=True, return_timestamps=True, language="en",
+    try:
+        logger.info(f"Starting transcription for {audio_path}")
+        model = "openai/whisper-large-v2"
+        logger.info("Loading Whisper model and processor...")
+        
+        processor = WhisperProcessor.from_pretrained(model)
+        model = WhisperForConditionalGeneration.from_pretrained(model)
+        model.config = WhisperConfig(torchscript=True, return_timestamps=True, language="en",
                                  task="transcribe")
+        
+        logger.info("Loading audio file...")
+        audio, sr = load_librosa(audio_path)
+        if audio is None:
+            raise ValueError("Failed to load audio file")
+            
+        logger.info("Processing audio through model...")
+        inputs = processor(audio, sampling_rate=sr, return_tensors="pt",
+                       truncation=False).input_features
+        inputs = inputs.to(device, dtype=torch.float32, non_blocking=True)
+        attention_mask = torch.ones(1, 2000).to(device)
+        model = model.to(device)
 
-    attention_mask = torch.ones(1, 2000).to(
-        device)  # Max input length is 20000
-    model = model.to(device)
-    # Load audio file with 16kHz sampling rate
-    audio, sr = load_librosa(audio_path)
-    inputs = processor(audio, sampling_rate=sr, return_tensors="pt",
-                       truncation=False).input_features  # No truncation on long audio added
-    inputs = inputs.to(device, dtype=torch.float32, non_blocking=True)
+        logger.info("Generating transcription...")
+        with torch.no_grad():
+            predicted_ids = model.generate(
+                input_features=inputs, 
+                attention_mask=attention_mask,
+                num_beams=1,
+                return_timestamps=True,
+                early_stopping=False,
+                language="en",
+                task="transcribe"
+            )
+        
+        transcript = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+        logger.info("Transcription completed successfully")
+        return transcript
 
-    # model.generation_config = GenerationConfig(inputs=inputs, max_length=2000, num_beams=1, early_stopping=True)
-
-    with torch.no_grad():
-        predicted_ids = model.generate(input_features=inputs, attention_mask=attention_mask, num_beams=1,
-                                       return_timestamps=True, early_stopping=False, language="en", task="transcribe")
-    transcript = processor.batch_decode(
-        predicted_ids, skip_special_tokens=True)[0]
-    return transcript
+    except Exception as e:
+        logger.error(f"Transcription failed: {str(e)}", exc_info=True)
+        raise
 
 # FIXME: this pipeline is cleaner and easier than the one above ^^^
 
@@ -84,19 +104,48 @@ def test_pipeline(audio_path):
 
 
 def analyze_sentiment(text):
-    """ Analyze sentiment of the speech """
+    """ Analyze sentiment with human-readable labels """
     sentiment_pipeline = pipeline(
-        "sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment", device=device)
-    return sentiment_pipeline(text)
+        "sentiment-analysis", 
+        model="cardiffnlp/twitter-roberta-base-sentiment", 
+        device=device
+    )
+    result = sentiment_pipeline(text)[0]
+    
+    # Map technical labels to human-readable ones
+    label_map = {
+        "LABEL_0": "Negative",
+        "LABEL_1": "Neutral",
+        "LABEL_2": "Positive"
+    }
+    
+    return {
+        "label": label_map.get(result["label"], result["label"]),
+        "score": result["score"],
+        "suggestion": (
+            "Your tone is well-balanced and professional." if result["label"] == "LABEL_1"
+            else "Consider maintaining a more neutral tone." if result["label"] == "LABEL_0"
+            else "Your positive tone helps engage the audience."
+        )
+    }
 
 
 def detect_filler_words(text):
-    """ Count occurrences of filler words """
+    """ Count occurrences of filler words and provide suggestions """
     fillers = ["uh", "um", "like", "you know", "so", "actually", "basically"]
     word_list = text.lower().split()
-    filler_count = {word: word_list.count(word)
-                    for word in fillers if word in word_list}
-    return filler_count
+    filler_count = {word: word_list.count(word) for word in fillers if word in word_list}
+    
+    total_fillers = sum(filler_count.values())
+    assessment = {
+        "counts": filler_count,
+        "total": total_fillers,
+        "suggestion": (
+            "Great job minimizing filler words!" if total_fillers <= 2
+            else "Try to reduce filler words by pausing briefly instead."
+        )
+    }
+    return assessment
 
 
 def analyze_emotion(audio_path):
@@ -123,12 +172,23 @@ def detect_pauses(audio_path):
 
 
 def analyze_speech_rate(transcript, audio_path):
-    """ Calculate words per minute (WPM) """
+    """ Calculate words per minute (WPM) and provide context """
     audio, sr = load_librosa(audio_path)
     duration = librosa.get_duration(y=audio, sr=sr)
     word_count = len(transcript.split())
     wpm = (word_count / duration) * 60
-    return round(wpm, 2)
+    
+    # Add context about speech rate
+    rate_context = {
+        "wpm": round(wpm, 2),
+        "assessment": "optimal" if 120 <= wpm <= 150 else "too slow" if wpm < 120 else "too fast",
+        "suggestion": (
+            "Your speaking pace is ideal for clear communication." if 120 <= wpm <= 150
+            else "Consider speaking a bit faster to maintain engagement." if wpm < 120
+            else "Try slowing down slightly for better clarity."
+        )
+    }
+    return rate_context
 
 
 def grammar_correction(text):
@@ -172,12 +232,12 @@ def generate_feedback(transcript, sentiment, filler_words, emotion, keywords, pa
     feedback = "Speech Feedback Report:\n"
     # Show first 200 chars
     feedback += f"\nTranscription: {transcript[:200]}..."
-    feedback += f"\n\nSentiment: {sentiment[0]['label']} ({sentiment[0]['score']:.2f})"
+    feedback += f"\n\nSentiment: {sentiment['label']} ({sentiment['score']:.2f})"
     feedback += f"\nDetected Filler Words: {filler_words}"
     feedback += f"\nEmotions: {emotion[0]['label']} ({emotion[0]['score']:.2f})"
     feedback += f"\nKey Topics: {', '.join(keywords)}"
     feedback += f"\nNumber of Significant Pauses: {pauses}"
-    feedback += f"\nSpeech Rate: {wpm} words per minute"
+    feedback += f"\nSpeech Rate: {wpm['wpm']} words per minute"
     feedback += f"\nGrammar Corrections: {corrected_text}"
     feedback += f"\nSpeech Tone: {monotone}"
     feedback += f"\nPronunciation Clarity: {clarity}%"
@@ -193,7 +253,7 @@ def generate_smart_report(transcript, sentiment, filler_words, emotion, keywords
     4. Emotions: {emotion}
     5. Key Topics: {keywords}
     6. Significant Pauses: {pauses}
-    7. Speech Rate: {wpm} words per minute
+    7. Speech Rate: {wpm['wpm']} words per minute
     8. Grammar Corrections: {corrected_text}
     9. Speech Tone: {monotone}
     10. Pronunciation Clarity: {clarity}%
@@ -242,8 +302,8 @@ def main():
     # feedback_data = {
     #     "transcription": transcript[:200] + "...",
     #     "sentiment": {
-    #         "label": sentiment[0]['label'],
-    #         "score": round(sentiment[0]['score'], 2)
+    #         "label": sentiment['label'],
+    #         "score": round(sentiment['score'], 2)
     #     },
     #     "filler_words": filler_words,
     #     "emotion": {
@@ -252,7 +312,7 @@ def main():
     #     },
     #     "key_topics": keywords,
     #     "significant_pauses": pauses,
-    #     "speech_rate_wpm": wpm,
+    #     "speech_rate_wpm": wpm['wpm'],
     #     "grammar_corrections": corrected_text,
     #     "speech_tone": monotone,
     #     "pronunciation_clarity_percentage": clarity

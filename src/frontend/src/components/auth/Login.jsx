@@ -8,49 +8,38 @@ const Login = ({ setCurrentPage, setIsLoggedIn }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO:  Changed frontend auth call, check and implement
-  
-    // Call the login API endpoint
     console.log("Attempting to login with:", formData.email);
-    console.log("Attempting to login with:", formData.password);
-    console.log(e);
-    // Use fetch to call the backend API
+    
     const formBody = new URLSearchParams();
-    formBody.append('username', formData.email); // FastAPI expects 'username' field
+    formBody.append('username', formData.email);
     formBody.append('password', formData.password);
     
     fetch("http://localhost:8000/api/auth/token/", {
       method: "POST",
       headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: formBody
+      body: formBody,
+      credentials: 'include',
+      mode: 'cors'
     })
-      .then((response) => {
+    .then(async (response) => {
       if (!response.ok) {
-        throw new Error("Login failed");
+        const data = await response.json();
+        throw new Error(data.detail || "Login failed");
       }
       return response.json();
-      })
-      .then((data) => {
+    })
+    .then((data) => {
       console.log("Login successful:", data);
-      // Store the token in localStorage for later use
       localStorage.setItem('accessToken', data.access_token);
-      // Set login state and redirect
       setIsLoggedIn(true);
       setCurrentPage("dashboard");
-      })
-      .catch((error) => {
+    })
+    .catch((error) => {
       console.error("Login error:", error);
-      alert("Login failed. Please check your credentials and try again.");
-      setIsLoggedIn(false);
-      });
-
-    // Prevent the default form submission which was doing unconditional login
-    // return;
-
-    // setIsLoggedIn(true)
-    // setCurrentPage('dashboard')
+      alert(`Login failed: ${error.message}`);
+    });
   };
 
   return (

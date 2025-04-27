@@ -1,17 +1,36 @@
 # JagCoaching
-Project by Ruben Reyes, Chris Nastasi, Angelo Badiola, Mel Nunez, Brandon Martinez, and Andrew Gonzalez
+AI-powered presentation analysis tool by Ruben Reyes, Chris Nastasi, Angelo Badiola, Mel Nunez, Brandon Martinez, and Andrew Gonzalez.
 
-This project is designed to be an AI-powered analysis tool that will help coach a presentation. 
-After uploading, students will receive feedback on their presentation to help hone skills.
+## Key Changes Made
+1. **Authentication System**
+   - Implemented JWT token-based auth using PyJWT
+   - Added user sessions management
+   - Secured API endpoints
+   - Bcrypt password hashing
 
-## Quick Start Guide
+2. **Video Processing**
+   - Added robust error handling
+   - Improved file upload process
+   - Added audio extraction pipeline
+   - Enhanced feedback generation using Gemini AI
+
+3. **Database Integration**
+   - MongoDB Cloud integration
+   - User data persistence
+   - Video analysis storage
+   - Secure connection handling
+
+## Setup Instructions
 
 ### Prerequisites
-- Node.js (v18.0.0 or higher)
-- npm (comes with Node.js)
-- Git
+- Python 3.12.9
+- Node.js v18+
+- MongoDB Atlas account
+- Hugging Face API key
+- Google Gemini API key
+- FFmpeg (for audio processing)
 
-### Installation Steps
+### Backend Setup
 
 1. Clone the repository:
 ```bash
@@ -19,22 +38,123 @@ git clone https://github.com/your-username/JagCoaching.git
 cd JagCoaching
 ```
 
-2. Navigate to frontend directory:
+2. Set up Python environment (choose one method):
+   **Method 1 - Using venv and pip:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+   **Method 2 - Using pipenv:**
+   ```bash
+   pip install pipenv
+   pipenv install
+   pipenv shell
+   ```
+
+3. Set up environment variables:
+   - Copy `.env.development.example` to `.env.development`
+   - Add your credentials:
+   ```env
+   HUGGINGFACE_API_KEY=your_key
+   GOOGLE_GEMINI_API_KEY=your_key
+   MONGO_DB_URI=your_mongodb_uri
+   SECRET_KEY=your_secret_key
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   ```
+
+4. Start the backend server:
 ```bash
-cd src/frontend
+cd src/backend
+uvicorn main:app --reload
 ```
 
-3. Install dependencies:
+### Frontend Setup
+
+1. Install frontend dependencies:
 ```bash
+cd src/frontend
 npm install
 ```
 
-4. Start the development server:
+2. Start the development server:
 ```bash
 npm run dev
 ```
 
-5. Open your browser and visit: `http://localhost:5173`
+### Accessing the Application
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+
+### Troubleshooting Common Issues
+
+1. **Package Installation Issues:**
+   - Try upgrading pip: `python -m pip install --upgrade pip`
+   - If using pipenv: `pipenv clean && pipenv install`
+   - If using requirements.txt: `pip install -r requirements.txt --upgrade`
+
+2. **FFmpeg Missing:**
+   - On Ubuntu/Debian: `sudo apt-get install ffmpeg`
+   - On macOS: `brew install ffmpeg`
+   - On Windows: Download from official FFmpeg website
+
+3. **Torch Installation Issues:**
+   - If GPU support needed: `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+   - For CPU only: `pip install torch torchvision torchaudio`
+
+4. **MongoDB Connection Issues:**
+   - Verify MongoDB Atlas whitelist includes your IP
+   - Check connection string format
+   - Ensure network connectivity
+
+### Using the Application
+
+1. **Create an Account**
+   - Click "Sign Up" on the homepage
+   - Enter email and password
+   - Verify your account
+
+2. **Login**
+   - Use your email and password
+   - Keep note of your authentication token
+
+3. **Upload a Video**
+   - Must be logged in
+   - Supported formats: .mp4, .mov, .avi, .webm
+   - Wait for processing (can take several minutes)
+
+4. **View Feedback**
+   - Analysis includes:
+     - Transcription
+     - Sentiment analysis
+     - Filler word detection
+     - Speech clarity metrics
+     - Speaking pace (WPM)
+
+### Troubleshooting
+
+1. **Authentication Issues**
+   - Clear browser cache
+   - Check token expiration
+   - Verify credentials in .env file
+
+2. **Upload Problems**
+   - Ensure file size < 100MB
+   - Check supported formats
+   - Verify MongoDB connection
+
+3. **Processing Errors**
+   - Check API keys
+   - Verify Python dependencies
+   - Check server logs
+
+## Contributing
+Please create a new branch for features:
+```bash
+git checkout -b feature-name
+```
 
 ## Project Structure
 
@@ -134,3 +254,19 @@ src/frontend/
 
 
 # AI
+
+### Important Package Dependencies
+Make sure these key packages are properly installed:
+```bash
+pip install "PyJWT>=2.10.1"  # For JWT authentication
+pip install "passlib[bcrypt]>=1.7.4"  # For password hashing
+pip install "python-multipart>=0.0.9"  # For file uploads
+pip install "pydantic-settings>=2.8.1"  # For settings management
+```
+
+### Authentication System
+The system uses:
+- PyJWT for token generation and validation
+- Bcrypt for password hashing
+- OAuth2 password flow with Bearer tokens
+- Secure session management

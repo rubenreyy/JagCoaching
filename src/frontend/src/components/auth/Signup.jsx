@@ -20,22 +20,19 @@ const Signup = ({ setCurrentPage }) => {
     fetch('http://localhost:8000/api/register/', {
       method: 'POST',
       headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': 'http://localhost:3000',
-      'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-      username: formData.email,
-      email: formData.email,
-      password: formData.password,
+        email: formData.email,
+        password: formData.password
       }),
     })
-    .then(response => {
+    .then(async response => {
+      const data = await response.json();
       if (!response.ok) {
-      throw new Error('Registration failed');
+        throw new Error(data.detail || 'Registration failed');
       }
-      return response.json();
+      return data;
     })
     .then(data => {
       console.log('Registration successful:', data);
@@ -44,7 +41,7 @@ const Signup = ({ setCurrentPage }) => {
     })
     .catch(error => {
       console.error('Registration error:', error);
-      alert('Registration failed. Please try again.');
+      alert(`Registration failed: ${error.message}`);
     });
     console.log('Signup attempt:', formData)
   }

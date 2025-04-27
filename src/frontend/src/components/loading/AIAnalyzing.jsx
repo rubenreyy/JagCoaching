@@ -2,39 +2,53 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 
 const loadingMessages = [
+  "Transcribing your presentation...",
   "Analyzing speech patterns...",
-  "Evaluating body language...",
-  "Assessing slide design...",
-  "Measuring audience engagement...",
-  "Calculating overall performance...",
+  "Evaluating speaking pace...",
+  "Detecting filler words...",
+  "Measuring clarity...",
+  "Analyzing sentiment...",
+  "Identifying key topics...",
+  "Generating feedback..."
 ]
 
-const AIAnalyzing = ({ onComplete }) => {
+const AIAnalyzing = ({ onComplete, analysisData }) => {
   const [messageIndex, setMessageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    console.log("AIAnalyzing: Starting analysis animation")
+    
     const messageInterval = setInterval(() => {
-      setMessageIndex((prevIndex) => (prevIndex + 1) % loadingMessages.length)
+      setMessageIndex((prevIndex) => {
+        console.log("Updating loading message")
+        return (prevIndex + 1) % loadingMessages.length
+      })
     }, 3000)
 
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         const newProgress = prev + 1
         if (newProgress >= 100) {
+          console.log("Analysis animation complete")
           clearInterval(progressInterval)
-          requestAnimationFrame(() => onComplete())
+          clearInterval(messageInterval)
+          if (analysisData) {
+            console.log("Analysis data received:", analysisData)
+            onComplete(analysisData)
+          }
           return 100
         }
         return newProgress
       })
-    }, 150)
+    }, 300)
 
     return () => {
+      console.log("Cleaning up analysis intervals")
       clearInterval(messageInterval)
       clearInterval(progressInterval)
     }
-  }, [onComplete])
+  }, [onComplete, analysisData])
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#EEEEEE] z-50">
