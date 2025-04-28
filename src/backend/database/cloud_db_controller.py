@@ -3,6 +3,7 @@ from datetime import datetime
 from pymongo.mongo_client import MongoClient
 from pymongo.results import InsertOneResult, UpdateResult
 from pymongo.server_api import ServerApi
+from bson.objectid import ObjectId
 
 from dotenv import load_dotenv
 load_dotenv("./.env.development")
@@ -330,6 +331,50 @@ class CloudDBController:
         except Exception as e:
             print(f"Error getting recent user sessions: {str(e)}")
             return []
+
+    # -------------------
+    # Presentations Management
+    # -------------------
+    def get_user_presentations(self, db_name, user_id, limit=0, skip=0, sort_by=None):
+        """Get all presentations for a specific user with pagination and sorting"""
+        try:
+            sort_options = [("created_at", -1)]  # Default sort by creation date, newest first
+            if sort_by:
+                sort_options = [sort_by]
+                
+            cursor = self.client[db_name]["presentations"].find(
+                {"user_id": user_id}
+            ).sort(sort_options)
+            
+            if skip:
+                cursor = cursor.skip(skip)
+            if limit:
+                cursor = cursor.limit(limit)
+                
+            return list(cursor)
+        except Exception as e:
+            print(f"Error getting user presentations: {str(e)}")
+            return []
+    
+    def get_presentation_by_id(self, db_name, presentation_id):
+        """Get a specific presentation by ID"""
+        try:
+            return self.client[db_name]["presentations"].find_one({"_id": ObjectId(presentation_id)})
+        except Exception as e:
+            print(f"Error getting presentation: {str(e)}")
+            return None
+    
+    def update_presentation(self, db_name, presentation_id, update_data):
+        """Update a presentation document"""
+        try:
+            update_data["updated_at"] = datetime.utcnow()
+            return self.client[db_name]["presentations"].update_one(
+                {"_id": ObjectId(presentation_id)},
+                {"$set": update_data}
+            )
+        except Exception as e:
+            print(f"Error updating presentation: {str(e)}")
+            return None
 
 
 class CloudDBInitializer(CloudDBController):

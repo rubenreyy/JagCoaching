@@ -92,46 +92,46 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
     };
 
     const handleAnalyze = async () => {
-        if (!uploadedFileId || !isUploadComplete) {
-            console.error("Cannot analyze: No file uploaded or upload not complete");
+        if (!isUploadComplete || !uploadedFileId) {
+            console.error("No file uploaded or upload not complete");
             return;
         }
-
+        
         setIsAnalyzing(true);
         
-        // Set to false to use real data
-        const USE_MOCK_DATA = false;
-        
         try {
-            if (USE_MOCK_DATA) {
-                console.log("Using mock data for testing");
-                setTimeout(() => {
-                    setFeedbackData(mockFeedbackData);
-                    setIsAnalyzing(false);
-                    setCurrentPage('feedback');
-                }, 3000);
-                return;
-            }
-
-            console.log("Starting analysis for file:", uploadedFileId);
-            const response = await fetch("http://localhost:8000/api/videos/process-audio/", {
-                method: "POST",
+            console.log("Starting analysis for file:", files[0].name);
+            
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/videos/process-audio/`, {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
                 },
-                body: JSON.stringify({ file_name: uploadedFileId }),
+                body: JSON.stringify({ file_name: files[0].name })
             });
-
+            
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Processing failed');
+                let errorMessage = 'Analysis failed';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || 'Analysis failed';
+                } catch (e) {
+                    // If response is not JSON, try to get text
+                    const errorText = await response.text();
+                    errorMessage = errorText || 'Analysis failed';
+                }
+                throw new Error(errorMessage);
             }
-
-            const analysisData = await response.json();
-            console.log("Analysis data received:", analysisData);
-            setFeedbackData(analysisData);
-            setCurrentPage('feedback');
+            
+            const data = await response.json();
+            console.log("Analysis complete:", data);
+            
+            // Store the feedback data
+            setFeedbackData(data);
+            
+            // Navigate to feedback page
+            setCurrentPage("feedback");
         } catch (error) {
             console.error("Analysis failed:", error);
             alert(`Analysis failed: ${error.message}`);

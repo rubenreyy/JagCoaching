@@ -16,6 +16,7 @@ from uuid import uuid4  # Added for session IDs
 import time  # Added for rate limiting
 import logging
 import json  # For logging
+from bson import ObjectId
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -318,3 +319,51 @@ def detect_suspicious_activity(user_id: str, ip_address: str, user_agent: str = 
         })
     
     return suspicious
+
+async def get_current_active_user_with_refresh(token: str = Depends(oauth2_scheme)):
+    """
+    Get the current active user with token refresh capability
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        
+        # Check if token is about to expire (within 5 minutes)
+        exp = payload.get("exp")
+        if exp and (datetime.fromtimestamp(exp) - datetime.utcnow()).total_seconds() < 300:
+            # Token is about to expire, refresh it
+            DB_CONNECTION.connect()
+            user = DB_CONNECTION.find_document("JagCoaching", "users", {"_id": ObjectId(user_id)})
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Create a new token
+            access_token = create_access_token(data={"sub": user_id})
+            
+            # Return both the user and the new token
+            return {"user": user, "new_token": access_token}
+        
+        # Token is still valid
+        DB_CONNECTION.connect()
+        user = DB_CONNECTION.find_document("JagCoaching", "users", {"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    finally:
+        if DB_CONNECTION.client:
+            DB_CONNECTION.client.close()

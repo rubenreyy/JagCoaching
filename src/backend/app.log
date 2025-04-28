@@ -1,0 +1,246 @@
+2025-04-27 20:17:37,015 - main - INFO - Created directory: uploads
+2025-04-27 20:17:37,015 - main - INFO - Created directory: uploads/videos
+2025-04-27 20:17:37,015 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 20:18:55,754 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67f6ed8322308792af06359c'), 'username': 'bro1@gmail.com', 'email': 'bro1@gmail.com', 'password': '$2b$12$nzoOJDo4qK2Ha/WMOOGXUuH7Gs9RlRLTeZsaWi5bxNeHrsHlSqZbW', 'is_active': True, 'created_at': datetime.datetime(2025, 4, 9, 16, 58, 27, 340000)}
+2025-04-27 20:18:55,755 - routers.videos - INFO - File details - Filename: Student_1.mp4, Content-Type: video/mp4
+2025-04-27 20:18:55,755 - routers.videos - INFO - Creating upload directory
+2025-04-27 20:18:55,755 - routers.videos - INFO - Generated unique filename: 3e972984-dc0e-40c9-b89e-eb75c349229f.mp4
+2025-04-27 20:18:55,756 - routers.videos - INFO - Saving file to: uploads/videos/3e972984-dc0e-40c9-b89e-eb75c349229f.mp4
+2025-04-27 20:18:55,767 - routers.videos - INFO - File saved successfully
+2025-04-27 20:18:55,767 - routers.videos - INFO - Connecting to database
+2025-04-27 20:18:56,646 - routers.videos - INFO - Video saved to database with ID: 680ed7806750f67306f72377
+2025-04-27 20:23:55,204 - main - INFO - Shutting down...
+2025-04-27 20:24:05,407 - main - INFO - Created directory: uploads
+2025-04-27 20:24:05,407 - main - INFO - Created directory: uploads/videos
+2025-04-27 20:24:05,407 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 20:25:53,474 - main - INFO - Shutting down...
+2025-04-27 20:26:03,214 - main - INFO - Created directory: uploads
+2025-04-27 20:26:03,214 - main - INFO - Created directory: uploads/videos
+2025-04-27 20:26:03,214 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 20:31:31,387 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67f6ed8322308792af06359c'), 'username': 'bro1@gmail.com', 'email': 'bro1@gmail.com', 'password': '$2b$12$nzoOJDo4qK2Ha/WMOOGXUuH7Gs9RlRLTeZsaWi5bxNeHrsHlSqZbW', 'is_active': True, 'created_at': datetime.datetime(2025, 4, 9, 16, 58, 27, 340000)}
+2025-04-27 20:31:31,388 - routers.videos - INFO - File details - Filename: Student_1.mp4, Content-Type: video/mp4
+2025-04-27 20:31:31,388 - routers.videos - INFO - Creating upload directory
+2025-04-27 20:31:31,388 - routers.videos - INFO - Generated unique filename: a0f912ea-4a1a-4264-8b41-fc7c954eb286.mp4
+2025-04-27 20:31:31,389 - routers.videos - INFO - Saving file to: uploads/videos/a0f912ea-4a1a-4264-8b41-fc7c954eb286.mp4
+2025-04-27 20:31:31,400 - routers.videos - INFO - File saved successfully
+2025-04-27 20:31:31,401 - routers.videos - INFO - Connecting to database
+2025-04-27 20:31:32,038 - routers.videos - INFO - Video saved to database with ID: 680eda73e69fa9ed81f224ac
+2025-04-27 20:31:33,910 - routers.videos - INFO - Starting audio processing for file: Student_1.mp4
+2025-04-27 20:31:33,910 - routers.videos - INFO - Looking for video at: uploads/videos/Student_1.mp4
+2025-04-27 20:31:33,910 - routers.videos - INFO - Video not found at uploads/videos/Student_1.mp4, looking for recent uploads
+2025-04-27 20:31:34,457 - routers.videos - ERROR - Error processing audio: CloudDBController.find_documents() got an unexpected keyword argument 'sort'
+Traceback (most recent call last):
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/src/backend/routers/videos.py", line 125, in process_audio
+    videos = list(DB_CONNECTION.find_documents(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: CloudDBController.find_documents() got an unexpected keyword argument 'sort'
+2025-04-27 20:38:12,178 - main - INFO - Shutting down...
+2025-04-27 20:38:22,363 - main - INFO - Created directory: uploads
+2025-04-27 20:38:22,363 - main - INFO - Created directory: uploads/videos
+2025-04-27 20:38:22,363 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 20:38:32,189 - main - INFO - Shutting down...
+2025-04-27 20:38:50,706 - main - INFO - Created directory: uploads
+2025-04-27 20:38:50,706 - main - INFO - Created directory: uploads/videos
+2025-04-27 20:38:50,706 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 20:39:51,441 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67f6ed8322308792af06359c'), 'username': 'bro1@gmail.com', 'email': 'bro1@gmail.com', 'password': '$2b$12$nzoOJDo4qK2Ha/WMOOGXUuH7Gs9RlRLTeZsaWi5bxNeHrsHlSqZbW', 'is_active': True, 'created_at': datetime.datetime(2025, 4, 9, 16, 58, 27, 340000)}
+2025-04-27 20:39:51,442 - routers.videos - INFO - File details - Filename: Student_1.mp4, Content-Type: video/mp4
+2025-04-27 20:39:51,442 - routers.videos - INFO - Creating upload directory
+2025-04-27 20:39:51,443 - routers.videos - INFO - Generated unique filename: fa04d7cb-c75b-464e-b445-116395299ca0.mp4
+2025-04-27 20:39:51,444 - routers.videos - INFO - Saving file to: uploads/videos/fa04d7cb-c75b-464e-b445-116395299ca0.mp4
+2025-04-27 20:39:51,462 - routers.videos - INFO - File saved successfully
+2025-04-27 20:39:51,462 - routers.videos - INFO - Connecting to database
+2025-04-27 20:39:52,095 - routers.videos - INFO - Video saved to database with ID: 680edc6846225b6a38adb1ad
+2025-04-27 20:39:53,793 - routers.videos - INFO - Starting audio processing for file: Student_1.mp4
+2025-04-27 20:39:53,793 - routers.videos - INFO - Looking for video at: uploads/videos/Student_1.mp4
+2025-04-27 20:39:53,794 - routers.videos - INFO - Video not found at uploads/videos/Student_1.mp4, looking for recent uploads
+2025-04-27 20:39:54,481 - routers.videos - INFO - Found recent video: uploads/videos/fa04d7cb-c75b-464e-b445-116395299ca0.mp4
+2025-04-27 20:39:54,481 - routers.videos - INFO - Starting audio extraction...
+2025-04-27 20:39:54,481 - utils - INFO - Starting audio extraction from uploads/videos/fa04d7cb-c75b-464e-b445-116395299ca0.mp4
+2025-04-27 20:39:54,481 - utils - INFO - Created output directory: uploads/videos/audio
+2025-04-27 20:39:54,482 - utils - INFO - Will save audio to: uploads/videos/audio/fa04d7cb-c75b-464e-b445-116395299ca0.wav
+2025-04-27 20:39:56,983 - utils - INFO - Audio extraction completed: uploads/videos/audio/fa04d7cb-c75b-464e-b445-116395299ca0.wav
+2025-04-27 20:39:56,985 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/fa04d7cb-c75b-464e-b445-116395299ca0.wav
+2025-04-27 20:39:56,985 - routers.videos - INFO - Starting audio analysis...
+2025-04-27 20:39:56,986 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/fa04d7cb-c75b-464e-b445-116395299ca0.wav
+2025-04-27 20:39:56,986 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-04-27 20:39:58,496 - scripts.speech_analysis - INFO - Loading audio file...
+2025-04-27 20:40:05,095 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-04-27 20:40:05,188 - scripts.speech_analysis - INFO - Generating transcription...
+2025-04-27 21:36:30,416 - scripts.speech_analysis - INFO - Transcription completed successfully
+2025-04-27 21:37:25,754 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-04-27 21:37:25,756 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-04-27 21:38:13,002 - routers.videos - INFO - Audio analysis completed
+2025-04-27 21:38:13,003 - routers.videos - INFO - Updating database with analysis results...
+2025-04-27 21:38:13,891 - routers.videos - ERROR - Error processing audio: 'CloudDBController' object has no attribute 'insert_document'
+Traceback (most recent call last):
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/src/backend/routers/videos.py", line 207, in process_audio
+    DB_CONNECTION.insert_document("JagCoaching", "presentations", presentation_data)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'CloudDBController' object has no attribute 'insert_document'. Did you mean: 'delete_document'?
+2025-04-27 21:40:50,978 - main - INFO - Shutting down...
+2025-04-27 21:41:02,652 - main - INFO - Created directory: uploads
+2025-04-27 21:41:02,652 - main - INFO - Created directory: uploads/videos
+2025-04-27 21:41:02,652 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 21:45:42,681 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67f6ed8322308792af06359c'), 'username': 'bro1@gmail.com', 'email': 'bro1@gmail.com', 'password': '$2b$12$nzoOJDo4qK2Ha/WMOOGXUuH7Gs9RlRLTeZsaWi5bxNeHrsHlSqZbW', 'is_active': True, 'created_at': datetime.datetime(2025, 4, 9, 16, 58, 27, 340000)}
+2025-04-27 21:45:42,682 - routers.videos - INFO - File details - Filename: Student_3.mp4, Content-Type: video/mp4
+2025-04-27 21:45:42,682 - routers.videos - INFO - Creating upload directory
+2025-04-27 21:45:42,682 - routers.videos - INFO - Generated unique filename: ccc308ab-744a-4d51-b2de-856a8313f242.mp4
+2025-04-27 21:45:42,683 - routers.videos - INFO - Saving file to: uploads/videos/ccc308ab-744a-4d51-b2de-856a8313f242.mp4
+2025-04-27 21:45:42,690 - routers.videos - INFO - File saved successfully
+2025-04-27 21:45:42,690 - routers.videos - INFO - Connecting to database
+2025-04-27 21:45:43,473 - routers.videos - INFO - Video saved to database with ID: 680eebd7bcfe4ce3bb90e15f
+2025-04-27 21:45:45,335 - routers.videos - INFO - Starting audio processing for file: Student_3.mp4
+2025-04-27 21:45:45,335 - routers.videos - INFO - Looking for video at: uploads/videos/Student_3.mp4
+2025-04-27 21:45:45,336 - routers.videos - INFO - Video not found at uploads/videos/Student_3.mp4, looking for recent uploads
+2025-04-27 21:45:46,043 - routers.videos - INFO - Found recent video: uploads/videos/ccc308ab-744a-4d51-b2de-856a8313f242.mp4
+2025-04-27 21:45:46,043 - routers.videos - INFO - Starting audio extraction...
+2025-04-27 21:45:46,044 - utils - INFO - Starting audio extraction from uploads/videos/ccc308ab-744a-4d51-b2de-856a8313f242.mp4
+2025-04-27 21:45:46,044 - utils - INFO - Created output directory: uploads/videos/audio
+2025-04-27 21:45:46,044 - utils - INFO - Will save audio to: uploads/videos/audio/ccc308ab-744a-4d51-b2de-856a8313f242.wav
+2025-04-27 21:45:46,495 - utils - INFO - Audio extraction completed: uploads/videos/audio/ccc308ab-744a-4d51-b2de-856a8313f242.wav
+2025-04-27 21:45:46,495 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/ccc308ab-744a-4d51-b2de-856a8313f242.wav
+2025-04-27 21:45:46,495 - routers.videos - INFO - Starting audio analysis...
+2025-04-27 21:45:46,496 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/ccc308ab-744a-4d51-b2de-856a8313f242.wav
+2025-04-27 21:45:46,496 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-04-27 21:45:48,275 - scripts.speech_analysis - INFO - Loading audio file...
+2025-04-27 21:45:49,314 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-04-27 21:45:49,388 - scripts.speech_analysis - INFO - Generating transcription...
+2025-04-27 22:26:35,459 - scripts.speech_analysis - INFO - Transcription completed successfully
+2025-04-27 22:26:57,010 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-04-27 22:26:57,011 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-04-27 22:27:24,820 - routers.videos - INFO - Audio analysis completed
+2025-04-27 22:27:24,820 - routers.videos - INFO - Updating database with analysis results...
+2025-04-27 22:27:25,899 - routers.videos - ERROR - Error processing audio: The dollar ($) prefixed field '$set' in '$set' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith., full error: {'index': 0, 'code': 52, 'errmsg': "The dollar ($) prefixed field '$set' in '$set' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith."}
+Traceback (most recent call last):
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/src/backend/routers/videos.py", line 210, in process_audio
+    DB_CONNECTION.update_document(
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/src/backend/database/cloud_db_controller.py", line 49, in update_document
+    return self.client[db_name][collection_name].update_one(filter_dict, {"$set": update_dict})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1336, in update_one
+    self._update_retryable(
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1118, in _update_retryable
+    return self._database.client._retryable_write(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2040, in _retryable_write
+    return self._retry_with_session(retryable, func, s, bulk, operation, operation_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1926, in _retry_with_session
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/_csot.py", line 119, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1972, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2709, in run
+    return self._read() if self._is_read else self._write()
+                                              ^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2841, in _write
+    return self._func(self._session, conn, self._retryable)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1098, in _update
+    return self._update(
+           ^^^^^^^^^^^^^
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1059, in _update
+    _check_write_command_response(result)
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 288, in _check_write_command_response
+    _raise_last_write_error(write_errors)
+  File "/Users/andrewgonzalez/Desktop/JagCoaching2/venv/lib/python3.12/site-packages/pymongo/helpers_shared.py", line 259, in _raise_last_write_error
+    raise WriteError(error.get("errmsg"), error.get("code"), error)
+pymongo.errors.WriteError: The dollar ($) prefixed field '$set' in '$set' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith., full error: {'index': 0, 'code': 52, 'errmsg': "The dollar ($) prefixed field '$set' in '$set' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith."}
+2025-04-27 22:39:21,526 - main - INFO - Shutting down...
+2025-04-27 22:39:34,285 - main - INFO - Created directory: uploads
+2025-04-27 22:39:34,285 - main - INFO - Created directory: uploads/videos
+2025-04-27 22:39:34,285 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 22:40:56,314 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67f6ed8322308792af06359c'), 'username': 'bro1@gmail.com', 'email': 'bro1@gmail.com', 'password': '$2b$12$nzoOJDo4qK2Ha/WMOOGXUuH7Gs9RlRLTeZsaWi5bxNeHrsHlSqZbW', 'is_active': True, 'created_at': datetime.datetime(2025, 4, 9, 16, 58, 27, 340000)}
+2025-04-27 22:40:56,315 - routers.videos - INFO - File details - Filename: Student_3.mp4, Content-Type: video/mp4
+2025-04-27 22:40:56,315 - routers.videos - INFO - Creating upload directory
+2025-04-27 22:40:56,316 - routers.videos - INFO - Generated unique filename: 970b6fa9-9b8f-41d5-88f2-1649fa4762f3.mp4
+2025-04-27 22:40:56,316 - routers.videos - INFO - Saving file to: uploads/videos/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.mp4
+2025-04-27 22:40:56,322 - routers.videos - INFO - File saved successfully
+2025-04-27 22:40:56,322 - routers.videos - INFO - Connecting to database
+2025-04-27 22:40:57,007 - routers.videos - INFO - Video saved to database with ID: 680ef8c81def708690d61a1c
+2025-04-27 22:40:58,694 - routers.videos - INFO - Starting audio processing for file: Student_3.mp4
+2025-04-27 22:40:58,694 - routers.videos - INFO - Looking for video at: uploads/videos/Student_3.mp4
+2025-04-27 22:40:58,694 - routers.videos - INFO - Video not found at uploads/videos/Student_3.mp4, looking for recent uploads
+2025-04-27 22:40:59,381 - routers.videos - INFO - Found recent video: uploads/videos/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.mp4
+2025-04-27 22:40:59,381 - routers.videos - INFO - Starting audio extraction...
+2025-04-27 22:40:59,382 - utils - INFO - Starting audio extraction from uploads/videos/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.mp4
+2025-04-27 22:40:59,382 - utils - INFO - Created output directory: uploads/videos/audio
+2025-04-27 22:40:59,382 - utils - INFO - Will save audio to: uploads/videos/audio/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.wav
+2025-04-27 22:40:59,883 - utils - INFO - Audio extraction completed: uploads/videos/audio/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.wav
+2025-04-27 22:40:59,883 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.wav
+2025-04-27 22:40:59,883 - routers.videos - INFO - Starting audio analysis...
+2025-04-27 22:40:59,883 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/970b6fa9-9b8f-41d5-88f2-1649fa4762f3.wav
+2025-04-27 22:40:59,883 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-04-27 22:41:01,360 - scripts.speech_analysis - INFO - Loading audio file...
+2025-04-27 22:41:02,141 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-04-27 22:41:02,191 - scripts.speech_analysis - INFO - Generating transcription...
+2025-04-27 23:20:50,885 - scripts.speech_analysis - INFO - Transcription completed successfully
+2025-04-27 23:21:15,663 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-04-27 23:21:15,664 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-04-27 23:21:43,637 - routers.videos - INFO - Audio analysis completed
+2025-04-27 23:21:43,638 - routers.videos - INFO - Updating database with analysis results...
+2025-04-27 23:21:44,652 - routers.videos - INFO - Database updated successfully
+2025-04-27 23:27:32,651 - dependencies.auth - WARNING - Multiple failed token attempts from IP: 127.0.0.1, count: 4
+2025-04-27 23:34:26,235 - main - INFO - Shutting down...
+2025-04-27 23:37:51,411 - main - INFO - Created directory: uploads
+2025-04-27 23:37:51,412 - main - INFO - Created directory: uploads/videos
+2025-04-27 23:37:51,412 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 23:40:12,383 - main - INFO - Shutting down...
+2025-04-27 23:40:28,600 - main - INFO - Created directory: uploads
+2025-04-27 23:40:28,600 - main - INFO - Created directory: uploads/videos
+2025-04-27 23:40:28,600 - main - INFO - Created directory: uploads/videos/audio
+2025-04-27 23:42:00,670 - routers.videos - INFO - Upload request received from user: {'_id': ObjectId('67f6ed8322308792af06359c'), 'username': 'bro1@gmail.com', 'email': 'bro1@gmail.com', 'password': '$2b$12$nzoOJDo4qK2Ha/WMOOGXUuH7Gs9RlRLTeZsaWi5bxNeHrsHlSqZbW', 'is_active': True, 'created_at': datetime.datetime(2025, 4, 9, 16, 58, 27, 340000)}
+2025-04-27 23:42:00,672 - routers.videos - INFO - File details - Filename: Student_6.mp4, Content-Type: video/mp4
+2025-04-27 23:42:00,672 - routers.videos - INFO - Creating upload directory
+2025-04-27 23:42:00,672 - routers.videos - INFO - Generated unique filename: 475f3f0e-d86a-4f09-aa23-c941bd863463.mp4
+2025-04-27 23:42:00,673 - routers.videos - INFO - Saving file to: uploads/videos/475f3f0e-d86a-4f09-aa23-c941bd863463.mp4
+2025-04-27 23:42:00,676 - routers.videos - INFO - File saved successfully
+2025-04-27 23:42:00,676 - routers.videos - INFO - Connecting to database
+2025-04-27 23:42:01,333 - routers.videos - INFO - Video saved to database with ID: 680f071945d9e825c27b6a1c
+2025-04-27 23:42:03,556 - routers.videos - INFO - Starting audio processing for file: Student_6.mp4
+2025-04-27 23:42:03,556 - routers.videos - INFO - Looking for video at: uploads/videos/Student_6.mp4
+2025-04-27 23:42:03,556 - routers.videos - INFO - Video not found at uploads/videos/Student_6.mp4, looking for recent uploads
+2025-04-27 23:42:04,250 - routers.videos - INFO - Found recent video: uploads/videos/475f3f0e-d86a-4f09-aa23-c941bd863463.mp4
+2025-04-27 23:42:04,250 - routers.videos - INFO - Starting audio extraction...
+2025-04-27 23:42:04,251 - utils - INFO - Starting audio extraction from uploads/videos/475f3f0e-d86a-4f09-aa23-c941bd863463.mp4
+2025-04-27 23:42:04,251 - utils - INFO - Created output directory: uploads/videos/audio
+2025-04-27 23:42:04,252 - utils - INFO - Will save audio to: uploads/videos/audio/475f3f0e-d86a-4f09-aa23-c941bd863463.wav
+2025-04-27 23:42:05,752 - utils - INFO - Audio extraction completed: uploads/videos/audio/475f3f0e-d86a-4f09-aa23-c941bd863463.wav
+2025-04-27 23:42:05,753 - routers.videos - INFO - Audio extracted successfully to: uploads/videos/audio/475f3f0e-d86a-4f09-aa23-c941bd863463.wav
+2025-04-27 23:42:05,753 - routers.videos - INFO - Starting audio analysis...
+2025-04-27 23:42:05,753 - scripts.speech_analysis - INFO - Starting transcription for uploads/videos/audio/475f3f0e-d86a-4f09-aa23-c941bd863463.wav
+2025-04-27 23:42:05,753 - scripts.speech_analysis - INFO - Loading Whisper model and processor...
+2025-04-27 23:42:07,176 - scripts.speech_analysis - INFO - Loading audio file...
+2025-04-27 23:42:07,973 - scripts.speech_analysis - INFO - Processing audio through model...
+2025-04-27 23:42:08,018 - scripts.speech_analysis - INFO - Generating transcription...
+2025-04-28 00:20:21,982 - scripts.speech_analysis - INFO - Transcription completed successfully
+2025-04-28 00:20:37,046 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: mps
+2025-04-28 00:20:37,047 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-04-28 00:20:53,135 - routers.videos - INFO - Audio analysis completed
+2025-04-28 00:20:53,135 - routers.videos - INFO - Updating database with analysis results...
+2025-04-28 00:20:54,130 - routers.videos - INFO - Database updated successfully
+2025-04-28 00:22:56,455 - dependencies.auth - WARNING - Multiple failed token attempts from IP: 127.0.0.1, count: 4
+2025-04-28 00:26:29,512 - main - INFO - Shutting down...
+2025-04-28 00:26:45,209 - main - INFO - Created directory: uploads
+2025-04-28 00:26:45,209 - main - INFO - Created directory: uploads/videos
+2025-04-28 00:26:45,209 - main - INFO - Created directory: uploads/videos/audio
+2025-04-28 00:26:45,818 - main - INFO - Shutting down...
+2025-04-28 00:26:58,477 - main - INFO - Created directory: uploads
+2025-04-28 00:26:58,477 - main - INFO - Created directory: uploads/videos
+2025-04-28 00:26:58,477 - main - INFO - Created directory: uploads/videos/audio
+2025-04-28 00:33:32,982 - main - INFO - Shutting down...
+2025-04-28 00:34:57,851 - main - INFO - Created directory: uploads
+2025-04-28 00:34:57,851 - main - INFO - Created directory: uploads/videos
+2025-04-28 00:34:57,851 - main - INFO - Created directory: uploads/videos/audio
+2025-04-28 00:37:46,533 - main - INFO - Shutting down...
+2025-04-28 00:37:59,274 - main - INFO - Created directory: uploads
+2025-04-28 00:37:59,275 - main - INFO - Created directory: uploads/videos
+2025-04-28 00:37:59,275 - main - INFO - Created directory: uploads/videos/audio
+2025-04-28 00:44:51,446 - main - INFO - Shutting down...
+2025-04-28 00:45:05,005 - main - INFO - Created directory: uploads
+2025-04-28 00:45:05,005 - main - INFO - Created directory: uploads/videos
+2025-04-28 00:45:05,005 - main - INFO - Created directory: uploads/videos/audio

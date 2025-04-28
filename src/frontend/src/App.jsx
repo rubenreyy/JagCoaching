@@ -12,7 +12,7 @@ import AccountPage from './components/account/AccountPage'
 import { LiveSessionProvider } from './contexts/LiveSessionContext'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard')
+  const [currentPage, setCurrentPage] = useState('login')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [accessToken, setAccessToken] = useState(null)
   const [feedbackData, setFeedbackData] = useState(null)
@@ -42,8 +42,18 @@ function App() {
           />
         )}
         {currentPage === 'schedule' && <Schedule />}
-        {currentPage === 'feedback' && <Feedback feedbackData={feedbackData} />}
-        {currentPage === 'progress' && <ProgressPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'feedback' && (
+          <Feedback 
+            feedbackData={feedbackData} 
+            setCurrentPage={setCurrentPage}
+          />
+        )}
+        {currentPage === 'progress' && (
+          <ProgressPage 
+            setCurrentPage={setCurrentPage} 
+            setFeedbackData={setFeedbackData} 
+          />
+        )}
         {currentPage === 'login' && <Login setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
         {currentPage === 'signup' && <Signup setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
         {currentPage === 'account' && <AccountPage setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
