@@ -7,7 +7,7 @@ if sys.path.count(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspat
     sys.path.append(os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))))
 from config import settings
-from routers import auth_router, videos_router, users_router, live_router
+from routers import auth_router, videos_router, users_router, live_router, presentations
 import uvicorn
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,6 +64,7 @@ app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(videos_router)
 app.include_router(live_router.router)
+app.include_router(presentations.router)
 
 # Get allowed origins from environment or use defaults
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")

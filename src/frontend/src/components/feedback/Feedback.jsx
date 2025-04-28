@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { Progress } from '../ui/Progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Download } from 'lucide-react'
+import { Download, FileText, Video } from 'lucide-react'
 
 const FeedbackChart = ({ data, title, suggestions, details }) => {
   return (
@@ -119,16 +119,54 @@ const LanguageAnalysis = ({ feedbackData }) => (
   </div>
 );
 
+// New component for PowerPoint feedback
+const PresentationAnalysis = ({ feedbackData }) => (
+  <div className="space-y-6">
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Slide Content Clarity</h3>
+      <p className="text-gray-800 mb-4">{feedbackData.slide_clarity}</p>
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="bg-primary h-2.5 rounded-full" style={{ width: '85%' }}></div>
+      </div>
+    </div>
+    
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Visual Design Quality</h3>
+      <p className="text-gray-800 mb-4">{feedbackData.visual_quality}</p>
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="bg-primary h-2.5 rounded-full" style={{ width: '75%' }}></div>
+      </div>
+    </div>
+    
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Key Topics & Themes</h3>
+      <p className="text-gray-800">{feedbackData.key_topics}</p>
+    </div>
+    
+    <div className="p-6 bg-white rounded-lg shadow-sm border-l-4 border-primary">
+      <h3 className="text-xl font-semibold mb-2">Improvement Suggestion</h3>
+      <p className="text-gray-800">{feedbackData.overall_suggestion}</p>
+    </div>
+  </div>
+);
+
 const Feedback = ({ feedbackData, setCurrentPage }) => {
   const [performanceData, setPerformanceData] = useState([])
   const [languageData, setLanguageData] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [feedbackType, setFeedbackType] = useState('video') // 'video' or 'presentation'
 
   useEffect(() => {
     // If feedbackData is provided directly, use it
     if (feedbackData) {
-      processFeedbackData(feedbackData)
+      // Check if this is presentation feedback
+      if (feedbackData.feedback_type === 'presentation') {
+        setFeedbackType('presentation')
+      } else {
+        setFeedbackType('video')
+        processFeedbackData(feedbackData)
+      }
       return
     }
     
@@ -253,7 +291,8 @@ const Feedback = ({ feedbackData, setCurrentPage }) => {
   }
   
   // If no data is available, show a more helpful message with guidance
-  if (!feedbackData && performanceData.length === 0) {
+  if ((!feedbackData && performanceData.length === 0) || 
+      (feedbackType === 'presentation' && !feedbackData)) {
     return (
       <div className="flex flex-col justify-center items-center h-screen gap-6 max-w-md mx-auto text-center px-4">
         <div className="bg-gray-100 p-8 rounded-lg shadow-sm w-full">
@@ -295,6 +334,41 @@ const Feedback = ({ feedbackData, setCurrentPage }) => {
     )
   }
 
+  // PowerPoint presentation feedback display
+  if (feedbackType === 'presentation') {
+    return (
+      <div className="max-w-[1280px] mx-auto px-4 py-8">
+        {/* Presentation Summary Card */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>PowerPoint Analysis</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">Analyzed on {new Date().toLocaleDateString()}</p>
+            </div>
+            <FileText className="h-10 w-10 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center mb-6">
+              <div className="text-4xl font-bold font-mono text-primary mr-4">
+                Summary
+              </div>
+            </div>
+            <p className="font-mono text-[#030303] mb-4">
+              {feedbackData.overall_suggestion}
+            </p>
+            <button className="px-6 py-2 bg-black text-white rounded-full font-mono font-semibold hover:bg-primary transition-colors flex items-center">
+              <Download className="mr-2 h-4 w-4" /> Download Analysis
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* PowerPoint Analysis Content */}
+        <PresentationAnalysis feedbackData={feedbackData} />
+      </div>
+    )
+  }
+
+  // Video feedback display (existing code)
   // Format filler words for display
   const fillerWordsList = Object.entries(feedbackData.filler_words?.counts || {})
     .map(([word, count]) => `"${word}": ${count} times`)
@@ -303,14 +377,15 @@ const Feedback = ({ feedbackData, setCurrentPage }) => {
     <div className="max-w-[1280px] mx-auto px-4 py-8">
       {/* Presentation Summary Card */}
       <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Presentation Summary</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Video Presentation Analysis</CardTitle>
+            <p className="text-sm text-gray-500 mt-1">Analyzed on {new Date().toLocaleDateString()}</p>
+          </div>
+          <Video className="h-10 w-10 text-primary" />
         </CardHeader>
         <CardContent>
           <h2 className="text-2xl font-bold font-mono mb-2">Speech Analysis Results</h2>
-          <p className="font-mono text-[#8E8E8E] mb-4">
-            Analyzed on {new Date().toLocaleDateString()}
-          </p>
           <div className="flex items-center mb-4">
             <div className="text-4xl font-bold font-mono text-primary mr-4">
               {Math.round(feedbackData.clarity?.score || 0)}%
@@ -323,7 +398,7 @@ const Feedback = ({ feedbackData, setCurrentPage }) => {
         </CardContent>
       </Card>
 
-      {/* Feedback Tabs */}
+      {/* Feedback Tabs - Only for video feedback */}
       <Tabs defaultValue="audio" className="mb-8">
         <TabsList>
           <TabsTrigger value="audio">Audio</TabsTrigger>
