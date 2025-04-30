@@ -76,19 +76,11 @@ ngrok_origins = ["https://*.ngrok-free.app", "https://*.ngrok.io"]
 # Update the CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://localhost:5173", 
-        "https://*.ngrok-free.app",
-        "https://*.ngrok.io",
-        "*" 
-    ],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"], 
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    # Add this for WebSockets
-    allow_origin_regex="https://.*\.ngrok-free\.app|https://.*\.ngrok\.io"
+    expose_headers=["*"]
 )
 
 @app.get("/")
