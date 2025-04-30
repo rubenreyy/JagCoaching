@@ -79,9 +79,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000", 
         "http://localhost:5173", 
-        "https://*.ngrok-free.app",  // Add ngrok domains explicitly
+        "https://*.ngrok-free.app",
         "https://*.ngrok.io",
-        "*"  // You already have this wildcard, but it's better to be explicit
+        "*" 
     ],
     allow_credentials=true,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
