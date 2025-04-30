@@ -10,63 +10,64 @@ from scipy.signal import find_peaks
 import google.generativeai as genai
 from google.genai import types
 from dotenv import load_dotenv
-import json
 import logging
-import whisper
 
-# Set cache directories to avoid root overflow
+# Configure disk space use
 os.environ["XDG_CACHE_HOME"] = "/mnt/disk-6/.cache"
 os.environ["TRANSFORMERS_CACHE"] = "/mnt/disk-6/.hf_cache"
-load_dotenv("./.env.development")
 
-# Device setup
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Load environment variables
+load_dotenv("./.env.development")
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Determine compute device
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 @functools.lru_cache(maxsize=40)
 def load_librosa(audio_path):
     try:
         audio, sr = librosa.load(audio_path, sr=16000, duration=300)
-        return audio, sr
     except Exception as e:
         logger.error(f"Error loading audio file {audio_path}: {e}")
         return None, None
+    return audio, sr
+
 
 def transcribe_speech(audio_path):
+    import whisper
     try:
         logger.info(f"Starting transcription for {audio_path}")
-        model = whisper.load_model("medium")
+        model = whisper.load_model("small")
         logger.info("Whisper model loaded successfully")
         result = model.transcribe(audio_path, language="en", task="transcribe", verbose=False)
-        logger.info("Transcription completed successfully")
         return result["text"]
     except Exception as e:
         logger.error(f"Transcription failed: {str(e)}", exc_info=True)
         raise
 
+
 @functools.lru_cache(maxsize=1)
 def get_sentiment_model():
     model_name = "cardiffnlp/twitter-roberta-base-sentiment"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    model.to(device)
-    model.eval()
     return tokenizer, model
+
 
 def analyze_sentiment(text):
     tokenizer, model = get_sentiment_model()
+    model.to(device)
+    model.eval()
     inputs = tokenizer(text, return_tensors="pt").to(device)
     with torch.no_grad():
         outputs = model(**inputs)
         scores = torch.nn.functional.softmax(outputs.logits, dim=1)
         label_idx = scores.argmax().item()
         score = scores[0][label_idx].item()
-
     label_map = ["Negative", "Neutral", "Positive"]
     label = label_map[label_idx]
-
     return {
         "label": label,
         "score": score,
@@ -77,12 +78,13 @@ def analyze_sentiment(text):
         )
     }
 
+
 def detect_filler_words(text):
     fillers = ["uh", "um", "like", "you know", "so", "actually", "basically"]
     word_list = text.lower().split()
     filler_count = {word: word_list.count(word) for word in fillers if word in word_list}
     total_fillers = sum(filler_count.values())
-    return {
+    assessment = {
         "counts": filler_count,
         "total": total_fillers,
         "suggestion": (
@@ -90,21 +92,26 @@ def detect_filler_words(text):
             else "Try to reduce filler words by pausing briefly instead."
         )
     }
+    return assessment
+
 
 def analyze_emotion(audio_path):
-    emotion_pipeline = pipeline("audio-classification", model="superb/hubert-large-superb-er", device=device, batch_size=4)
+    emotion_pipeline = pipeline("audio-classification", model="superb/hubert-large-superb-er", device=device)
     return emotion_pipeline(audio_path)
+
 
 def extract_keywords(text):
     kw_model = KeyBERT()
     keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 2), stop_words='english', top_n=5)
     return [kw[0] for kw in keywords]
 
+
 def detect_pauses(audio_path):
     audio, sr = load_librosa(audio_path)
     energy = librosa.feature.rms(y=audio)[0]
     peaks, _ = find_peaks(-energy, distance=sr//2, height=-np.mean(energy))
     return len(peaks)
+
 
 def analyze_speech_rate(transcript, audio_path):
     audio, sr = load_librosa(audio_path)
@@ -121,9 +128,12 @@ def analyze_speech_rate(transcript, audio_path):
         )
     }
 
+
 def grammar_correction(text):
     grammar_pipeline = pipeline("text2text-generation", model="grammarly/coedit-large", device=device)
-    return grammar_pipeline(text, max_length=512)[0]['generated_text']
+    corrected_text = grammar_pipeline(text, max_length=512)[0]['generated_text']
+    return corrected_text
+
 
 def analyze_monotone_speech(audio_path):
     audio, sr = load_librosa(audio_path)
@@ -132,17 +142,13 @@ def analyze_monotone_speech(audio_path):
     pitch_variance = np.var(pitch)
     return "Monotone" if pitch_variance < 500 else "Dynamic"
 
+
 def evaluate_pronunciation_clarity(audio_path):
-    clarity_pipeline = pipeline(
-        "automatic-speech-recognition",
-        model="facebook/wav2vec2-base-960h",
-        device=device,
-        batch_size=4,
-        torch_dtype=torch.float32,
-    )
+    clarity_pipeline = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-base-960h", device=device)
     transcription = clarity_pipeline(audio_path)["text"]
     clarity_score = len([word for word in transcription.split() if word.isalpha()]) / len(transcription.split())
     return round(clarity_score * 100, 2)
+
 
 def generate_feedback(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity):
     feedback = "Speech Feedback Report:\n"
@@ -157,6 +163,7 @@ def generate_feedback(transcript, sentiment, filler_words, emotion, keywords, pa
     feedback += f"\nSpeech Tone: {monotone}"
     feedback += f"\nPronunciation Clarity: {clarity}%"
     return feedback
+
 
 def generate_smart_report(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity):
     prompt = f"""
@@ -186,7 +193,8 @@ def generate_smart_report(transcript, sentiment, filler_words, emotion, keywords
         return response.text
     except Exception as e:
         logger.error(f"Smart report generation failed: {e}")
-        return "An error occurred during smart feedback generation."
+        return "Error generating smart report."
+
 
 def main():
     audio_file = "scripts/tests/Student_1.wav"
@@ -201,11 +209,16 @@ def main():
     monotone = analyze_monotone_speech(audio_file)
     clarity = evaluate_pronunciation_clarity(audio_file)
 
-    feedback_report = generate_feedback(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity)
+    feedback_report = generate_feedback(
+        transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity
+    )
     print(feedback_report)
 
-    smart_report = generate_smart_report(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity)
+    smart_report = generate_smart_report(
+        transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity
+    )
     print(smart_report)
+
 
 if __name__ == "__main__":
     start_time = time()
