@@ -10,8 +10,8 @@ from scipy.signal import find_peaks
 import google.generativeai as genai
 from google.genai import types
 from dotenv import load_dotenv
-import yake
 import logging
+import yake
 import re
 
 # Configure disk space use
@@ -67,16 +67,110 @@ def transcribe_speech(audio_path):
         raise
 
 
-def extract_keywords(text):
+def analyze_sentiment(text):
+    """
+    Enhanced sentiment analysis with built-in fallback mechanisms.
+    Direct replacement for the original analyze_sentiment function.
+    """
     try:
-        extractor = yake.KeywordExtractor(lan="en", n=2, top=5)
-        keywords = extractor.extract_keywords(text)
-        logger.info(f"YAKE output: {keywords}")
-        return [kw[0] for kw in keywords]
+        # Check for valid input
+        if not text or len(text.strip()) < 10:
+            logger.warning("Text too short for sentiment analysis")
+            return {
+                "label": "Neutral",
+                "score": 0.5,
+                "suggestion": "Text too short for sentiment analysis."
+            }
+        
+        # Try ML-based approach first
+        try:
+            logger.info("Attempting sentiment analysis with transformers pipeline")
+            # Keep the original pipeline approach for compatibility
+            sentiment_pipeline = pipeline(
+                "sentiment-analysis",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
+                device=device if device != "cpu" else -1
+            )
+            
+            # Limit text length to avoid token limit issues
+            limited_text = text[:512] if len(text) > 512 else text
+            result = sentiment_pipeline(limited_text)[0]
+            
+            # Map the result to expected format
+            score = result["score"]
+            if result["label"] == "POSITIVE":
+                label = "Positive"
+                suggestion = "Your positive tone helps engage the audience."
+            elif result["label"] == "NEGATIVE":
+                label = "Negative"
+                suggestion = "Consider maintaining a more neutral tone."
+            else:
+                label = "Neutral"
+                suggestion = "Your tone is well-balanced and professional."
+                
+            logger.info(f"ML-based sentiment analysis succeeded: {label} ({score:.2f})")
+            return {
+                "label": label,
+                "score": score,
+                "suggestion": suggestion
+            }
+            
+        except Exception as ml_error:
+            # Log the specific error from the ML approach
+            logger.warning(f"ML-based sentiment analysis failed: {str(ml_error)}")
+            logger.info("Falling back to rule-based sentiment analysis")
+            
+            # Rule-based fallback approach
+            text_lower = text.lower()
+            
+            # Define sentiment word lists
+            positive_words = ['good', 'great', 'excellent', 'wonderful', 'happy', 'positive', 
+                            'amazing', 'fantastic', 'enjoy', 'like', 'love', 'best', 'better',
+                            'success', 'successful', 'well', 'perfect', 'exciting']
+            
+            negative_words = ['bad', 'poor', 'terrible', 'horrible', 'sad', 'negative', 
+                            'awful', 'dislike', 'hate', 'worst', 'worse', 'fail', 'failure',
+                            'problem', 'difficult', 'unfortunately', 'struggle', 'disappointing']
+            
+            # Count word occurrences
+            positive_count = sum(1 for word in positive_words if word in text_lower.split())
+            negative_count = sum(1 for word in negative_words if word in text_lower.split())
+            
+            # Calculate sentiment score (0 to 1 scale)
+            total = positive_count + negative_count
+            if total == 0:
+                score = 0.5  # Neutral if no sentiment words
+            else:
+                score = positive_count / total
+            
+            # Determine sentiment label and suggestion
+            if score > 0.7:
+                label = "Positive"
+                suggestion = "Your positive tone helps engage the audience."
+            elif score < 0.3:
+                label = "Negative"
+                suggestion = "Consider maintaining a more positive or neutral tone."
+            else:
+                label = "Neutral"
+                suggestion = "Your tone is well-balanced and professional."
+            
+            logger.info(f"Rule-based sentiment analysis result: {label} ({score:.2f})")
+            return {
+                "label": label,
+                "score": score,
+                "suggestion": suggestion
+            }
+            
     except Exception as e:
-        logger.error(f"YAKE keyword extraction failed: {e}")
-        return ["speech", "topic"]
-    
+        # Catch-all error handler
+        logger.error(f"All sentiment analysis methods failed: {str(e)}", exc_info=True)
+        # Return fallback result if everything fails
+        return {
+            "label": "Neutral",
+            "score": 0.5,
+            "suggestion": "Unable to analyze sentiment accurately. Consider reviewing the tone yourself."
+        }
+
 def detect_filler_words(text):
     fillers = ["uh", "um", "like", "you know", "so", "actually", "basically"]
     word_list = text.lower().split()
@@ -103,84 +197,15 @@ def analyze_emotion(audio_path):
         return [{"label": "neutral", "score": 1.0}]
 
 def extract_keywords(text):
-    """
-    Extract keywords from text using KeyBERT with improved error handling.
-    
-    Args:
-        text (str): The input text to extract keywords from
-        
-    Returns:
-        list: List of extracted keywords
-    """
-    # Input validation
-    if not text or not isinstance(text, str) or len(text.strip()) < 10:
-        logger.warning("Input text is too short or invalid")
-        return ["input", "invalid"]
-    
     try:
-        # Import separately to catch import errors
-        from keybert import KeyBERT
-        
-        # Create model explicitly without specifying model path (use default)
-        kw_model = KeyBERT()
-        
-        # Debug logging
-        logger.info(f"KeyBERT model created successfully")
-        logger.info(f"Processing text (first 50 chars): {text[:50]}...")
-        
-        # Extract keywords with simpler parameters first
-        keywords = kw_model.extract_keywords(
-            text,
-            keyphrase_ngram_range=(1, 1),  # Single words only for stability
-            stop_words='english',
-            top_n=5,
-            use_maxsum=True,  # Try to use maxsum instead of mmr for robustness
-            nr_candidates=20
-        )
-        
-        logger.info(f"Keyword extraction attempt 1 result: {keywords}")
-        
-        # If we don't have enough keywords, try again with different parameters
-        if not keywords or len(keywords) < 2:
-            logger.warning("First attempt yielded insufficient keywords, trying second approach")
-            
-            # Try with bigrams now
-            keywords = kw_model.extract_keywords(
-                text,
-                keyphrase_ngram_range=(1, 2),  # Single words and bigrams
-                stop_words='english', 
-                top_n=5,
-                use_maxsum=True,
-                nr_candidates=20
-            )
-            
-            logger.info(f"Keyword extraction attempt 2 result: {keywords}")
-        
-        # Return the keywords if we have at least 2
-        if keywords and len(keywords) >= 2:
-            return [kw[0] for kw in keywords]
-            
-        # If we reached here, we had extraction issues
-        raise ValueError("KeyBERT couldn't extract meaningful keywords")
-        
-    except ImportError as e:
-        logger.error(f"KeyBERT import failed: {e}")
-        return ["import", "error"]
-    except ValueError as e:
-        logger.warning(f"Keyword extraction failed with ValueError: {e}")
-        return ["extraction", "failed"]  
+        extractor = yake.KeywordExtractor(lan="en", n=2, top=5)
+        keywords = extractor.extract_keywords(text)
+        logger.info(f"YAKE output: {keywords}")
+        return [kw[0] for kw in keywords]
     except Exception as e:
-        # Catch all other exceptions
-        logger.error(f"Unexpected error in keyword extraction: {type(e).__name__}: {e}")
-        
-        # Ensure we return something sensible even if we hit unknown errors
-        if "keywords" in locals() and keywords and len(keywords) >= 1:
-            # We got at least one keyword, so return what we have
-            return [kw[0] for kw in keywords]
-        else:
-            # Complete fallback
-            return ["analysis", "content"]
-
+        logger.error(f"YAKE keyword extraction failed: {e}")
+        return ["speech", "topic"]
+    
 def detect_pauses(audio_path):
     try:
         audio, sr = load_librosa(audio_path)
