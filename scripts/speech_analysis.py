@@ -43,14 +43,16 @@ def load_librosa(audio_path):
 
 
 def transcribe_speech(audio_path):
-    """ Convert speech to text using Whisper """
     try:
         logger.info(f"Starting transcription for {audio_path}")
-        model = "openai/whisper-large-v2"
+
+        model_name = "openai/whisper-large-v2"
         logger.info("Loading Whisper model and processor...")
-        
-        processor = WhisperProcessor.from_pretrained(model)
-        model = WhisperForConditionalGeneration.from_pretrained(model, from_tf=True)
+
+        processor = WhisperProcessor.from_pretrained(model_name)
+        model = WhisperForConditionalGeneration.from_pretrained(
+            model_name, from_tf=True
+        )
         model.config = WhisperConfig(torchscript=True, return_timestamps=True, language="en",
                                  task="transcribe")
         
