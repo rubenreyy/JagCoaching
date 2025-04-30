@@ -50,7 +50,7 @@ def transcribe_speech(audio_path):
         logger.info("Loading Whisper model and processor...")
         
         processor = WhisperProcessor.from_pretrained(model)
-        model = WhisperForConditionalGeneration.from_pretrained(model)
+        model = WhisperForConditionalGeneration.from_pretrained(model, from_tf=True)
         model.config = WhisperConfig(torchscript=True, return_timestamps=True, language="en",
                                  task="transcribe")
         
