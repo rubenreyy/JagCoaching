@@ -36,7 +36,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 DB_CONNECTION = CloudDBController()
 
 router = APIRouter(
-    prefix="/api/users",
+    prefix="/users",
     tags=["users"],
     responses={404: {"description": "Not found"}},
 )

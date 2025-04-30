@@ -19,7 +19,7 @@ from utils import extract_audio, analyze_audio
 from scripts.SpeechAnalysisObject import SpeechAnalysisObject as SpeechAnalyzer
 
 router = APIRouter(
-    prefix="/api/videos",  # Changed from "/videos" to "/api/upload"
+    prefix="/videos", 
     tags=["videos"],
     responses={404: {"description": "Not found"}},
 )

@@ -16,7 +16,7 @@ from models.schemas import UploadResponse
 from scripts.powerpoint_analysis.pptx_analysis import analyze_presentation
 
 router = APIRouter(
-    prefix="/api/presentations",
+    prefix="/presentations",
     tags=["presentations"],
     responses={404: {"description": "Not found"}},
 )
