@@ -63,12 +63,13 @@ class WebSocketService {
         }
       }
       
-      let wsBase = this.apiBaseUrl
-      .replace(/^http:/, 'ws:')
-      .replace(/^https:/, 'wss:')
-      .replace(/\/$/, '');
+      let wsBase = this.apiBaseUrl.replace(/^http/, 'ws');
+      if (!wsBase.includes('/api')) {
+        wsBase += '/api';
+      }
       
-      const wsUrl = `${wsBase}/api/live/ws/${this.sessionId}`;
+      
+      const wsUrl = `${wsBase}/live/ws/${this.sessionId}`;
       
       
     
