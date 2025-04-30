@@ -196,6 +196,7 @@ def analyze_emotion(audio_path):
         return [{"label": "neutral", "score": 1.0}]
 
 def extract_keywords(text):
+
     try:
         kw_model = KeyBERT()
         keywords = kw_model.extract_keywords(
@@ -203,16 +204,19 @@ def extract_keywords(text):
             keyphrase_ngram_range=(1, 2),
             stop_words='english',
             top_n=5,
-            use_mmr=True,
-            diversity=0.7
+            use_maxsum=True,
+            nr_candidates=20
         )
-        logger.info(f"Extracted keywords: {keywords}")
+
+        logger.info(f"Keyword output: {keywords}")
         if not keywords or len(keywords) < 2:
-            return ["general", "topic"]
+            raise ValueError("Too few keywords")
+
         return [kw[0] for kw in keywords]
+
     except Exception as e:
-        logger.error(f"Keyword extraction failed: {str(e)}", exc_info=True)
-        return ["general", "topic"]
+        logger.warning(f"Fallback keywords used due to: {e}")
+        return ["presentation", "topic"]
 
 
 
