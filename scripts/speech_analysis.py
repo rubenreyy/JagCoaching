@@ -67,8 +67,12 @@ def transcribe_speech(audio_path):
 
 
 def analyze_sentiment(text):
+    """
+    Enhanced sentiment analysis with built-in fallback mechanisms.
+    Direct replacement for the original analyze_sentiment function.
+    """
     try:
-        # Check for empty or very short text
+        # Check for valid input
         if not text or len(text.strip()) < 10:
             logger.warning("Text too short for sentiment analysis")
             return {
@@ -76,72 +80,95 @@ def analyze_sentiment(text):
                 "score": 0.5,
                 "suggestion": "Text too short for sentiment analysis."
             }
-            
-        # Limit text size to prevent model issues
-        analysis_text = text[:1024] if len(text) > 1024 else text
         
-        # Log steps for debugging
-        logger.info(f"Starting sentiment analysis on text (length: {len(analysis_text)})")
-        
-        # Using a more reliable sentiment model from Hugging Face
-        tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
-        model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
-        
-        # Move model to specific device with error handling
+        # Try ML-based approach first
         try:
-            if device != "cpu":
-                model = model.to(device)
-                logger.info(f"Sentiment model moved to {device}")
+            logger.info("Attempting sentiment analysis with transformers pipeline")
+            # Keep the original pipeline approach for compatibility
+            sentiment_pipeline = pipeline(
+                "sentiment-analysis",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
+                device=device if device != "cpu" else -1
+            )
+            
+            # Limit text length to avoid token limit issues
+            limited_text = text[:512] if len(text) > 512 else text
+            result = sentiment_pipeline(limited_text)[0]
+            
+            # Map the result to expected format
+            score = result["score"]
+            if result["label"] == "POSITIVE":
+                label = "Positive"
+                suggestion = "Your positive tone helps engage the audience."
+            elif result["label"] == "NEGATIVE":
+                label = "Negative"
+                suggestion = "Consider maintaining a more neutral tone."
             else:
-                logger.info("Using CPU for sentiment analysis")
-        except Exception as device_err:
-            logger.warning(f"Device error, falling back to CPU: {device_err}")
-            model = model.to("cpu")
+                label = "Neutral"
+                suggestion = "Your tone is well-balanced and professional."
+                
+            logger.info(f"ML-based sentiment analysis succeeded: {label} ({score:.2f})")
+            return {
+                "label": label,
+                "score": score,
+                "suggestion": suggestion
+            }
             
-        # Run inference with direct model control
-        inputs = tokenizer(analysis_text, return_tensors="pt", truncation=True, max_length=512)
-        if device != "cpu":
-            inputs = {k: v.to(device) for k, v in inputs.items()}
+        except Exception as ml_error:
+            # Log the specific error from the ML approach
+            logger.warning(f"ML-based sentiment analysis failed: {str(ml_error)}")
+            logger.info("Falling back to rule-based sentiment analysis")
             
-        with torch.no_grad():
-            outputs = model(**inputs)
+            # Rule-based fallback approach
+            text_lower = text.lower()
             
-        # Process scores
-        scores = torch.nn.functional.softmax(outputs.logits, dim=1)
-        positive_score = scores[0][1].item()
-        
-        # Map the result to expected format with more detailed analysis
-        if positive_score > 0.75:
-            label = "Very Positive"
-            suggestion = "Your strong positive tone helps engage the audience."
-        elif positive_score > 0.55:
-            label = "Positive"
-            suggestion = "Your positive tone is good for audience engagement."
-        elif positive_score < 0.35:
-            label = "Negative"
-            suggestion = "Consider maintaining a more positive or neutral tone."
-        elif positive_score < 0.45:
-            label = "Slightly Negative"
-            suggestion = "Your tone leans slightly negative. Consider a more neutral approach."
-        else:
-            label = "Neutral"
-            suggestion = "Your tone is well-balanced and professional."
+            # Define sentiment word lists
+            positive_words = ['good', 'great', 'excellent', 'wonderful', 'happy', 'positive', 
+                            'amazing', 'fantastic', 'enjoy', 'like', 'love', 'best', 'better',
+                            'success', 'successful', 'well', 'perfect', 'exciting']
             
-        logger.info(f"Sentiment analysis complete: {label} ({positive_score:.2f})")
-        return {
-            "label": label,
-            "score": positive_score,
-            "suggestion": suggestion
-        }
+            negative_words = ['bad', 'poor', 'terrible', 'horrible', 'sad', 'negative', 
+                            'awful', 'dislike', 'hate', 'worst', 'worse', 'fail', 'failure',
+                            'problem', 'difficult', 'unfortunately', 'struggle', 'disappointing']
+            
+            # Count word occurrences
+            positive_count = sum(1 for word in positive_words if word in text_lower.split())
+            negative_count = sum(1 for word in negative_words if word in text_lower.split())
+            
+            # Calculate sentiment score (0 to 1 scale)
+            total = positive_count + negative_count
+            if total == 0:
+                score = 0.5  # Neutral if no sentiment words
+            else:
+                score = positive_count / total
+            
+            # Determine sentiment label and suggestion
+            if score > 0.7:
+                label = "Positive"
+                suggestion = "Your positive tone helps engage the audience."
+            elif score < 0.3:
+                label = "Negative"
+                suggestion = "Consider maintaining a more positive or neutral tone."
+            else:
+                label = "Neutral"
+                suggestion = "Your tone is well-balanced and professional."
+            
+            logger.info(f"Rule-based sentiment analysis result: {label} ({score:.2f})")
+            return {
+                "label": label,
+                "score": score,
+                "suggestion": suggestion
+            }
+            
     except Exception as e:
-        logger.error(f"Sentiment analysis failed: {str(e)}", exc_info=True)
-        # Return fallback result if sentiment analysis fails
+        # Catch-all error handler
+        logger.error(f"All sentiment analysis methods failed: {str(e)}", exc_info=True)
+        # Return fallback result if everything fails
         return {
             "label": "Neutral",
             "score": 0.5,
             "suggestion": "Unable to analyze sentiment accurately. Consider reviewing the tone yourself."
         }
-
 
 def detect_filler_words(text):
     fillers = ["uh", "um", "like", "you know", "so", "actually", "basically"]
