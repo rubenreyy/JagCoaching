@@ -10,6 +10,7 @@ from scipy.signal import find_peaks
 import google.generativeai as genai
 from google.genai import types
 from dotenv import load_dotenv
+import yake
 import logging
 import re
 
@@ -66,110 +67,16 @@ def transcribe_speech(audio_path):
         raise
 
 
-def analyze_sentiment(text):
-    """
-    Enhanced sentiment analysis with built-in fallback mechanisms.
-    Direct replacement for the original analyze_sentiment function.
-    """
+def extract_keywords(text):
     try:
-        # Check for valid input
-        if not text or len(text.strip()) < 10:
-            logger.warning("Text too short for sentiment analysis")
-            return {
-                "label": "Neutral",
-                "score": 0.5,
-                "suggestion": "Text too short for sentiment analysis."
-            }
-        
-        # Try ML-based approach first
-        try:
-            logger.info("Attempting sentiment analysis with transformers pipeline")
-            # Keep the original pipeline approach for compatibility
-            sentiment_pipeline = pipeline(
-                "sentiment-analysis",
-                model="distilbert-base-uncased-finetuned-sst-2-english",
-                device=device if device != "cpu" else -1
-            )
-            
-            # Limit text length to avoid token limit issues
-            limited_text = text[:512] if len(text) > 512 else text
-            result = sentiment_pipeline(limited_text)[0]
-            
-            # Map the result to expected format
-            score = result["score"]
-            if result["label"] == "POSITIVE":
-                label = "Positive"
-                suggestion = "Your positive tone helps engage the audience."
-            elif result["label"] == "NEGATIVE":
-                label = "Negative"
-                suggestion = "Consider maintaining a more neutral tone."
-            else:
-                label = "Neutral"
-                suggestion = "Your tone is well-balanced and professional."
-                
-            logger.info(f"ML-based sentiment analysis succeeded: {label} ({score:.2f})")
-            return {
-                "label": label,
-                "score": score,
-                "suggestion": suggestion
-            }
-            
-        except Exception as ml_error:
-            # Log the specific error from the ML approach
-            logger.warning(f"ML-based sentiment analysis failed: {str(ml_error)}")
-            logger.info("Falling back to rule-based sentiment analysis")
-            
-            # Rule-based fallback approach
-            text_lower = text.lower()
-            
-            # Define sentiment word lists
-            positive_words = ['good', 'great', 'excellent', 'wonderful', 'happy', 'positive', 
-                            'amazing', 'fantastic', 'enjoy', 'like', 'love', 'best', 'better',
-                            'success', 'successful', 'well', 'perfect', 'exciting']
-            
-            negative_words = ['bad', 'poor', 'terrible', 'horrible', 'sad', 'negative', 
-                            'awful', 'dislike', 'hate', 'worst', 'worse', 'fail', 'failure',
-                            'problem', 'difficult', 'unfortunately', 'struggle', 'disappointing']
-            
-            # Count word occurrences
-            positive_count = sum(1 for word in positive_words if word in text_lower.split())
-            negative_count = sum(1 for word in negative_words if word in text_lower.split())
-            
-            # Calculate sentiment score (0 to 1 scale)
-            total = positive_count + negative_count
-            if total == 0:
-                score = 0.5  # Neutral if no sentiment words
-            else:
-                score = positive_count / total
-            
-            # Determine sentiment label and suggestion
-            if score > 0.7:
-                label = "Positive"
-                suggestion = "Your positive tone helps engage the audience."
-            elif score < 0.3:
-                label = "Negative"
-                suggestion = "Consider maintaining a more positive or neutral tone."
-            else:
-                label = "Neutral"
-                suggestion = "Your tone is well-balanced and professional."
-            
-            logger.info(f"Rule-based sentiment analysis result: {label} ({score:.2f})")
-            return {
-                "label": label,
-                "score": score,
-                "suggestion": suggestion
-            }
-            
+        extractor = yake.KeywordExtractor(lan="en", n=2, top=5)
+        keywords = extractor.extract_keywords(text)
+        logger.info(f"YAKE output: {keywords}")
+        return [kw[0] for kw in keywords]
     except Exception as e:
-        # Catch-all error handler
-        logger.error(f"All sentiment analysis methods failed: {str(e)}", exc_info=True)
-        # Return fallback result if everything fails
-        return {
-            "label": "Neutral",
-            "score": 0.5,
-            "suggestion": "Unable to analyze sentiment accurately. Consider reviewing the tone yourself."
-        }
-
+        logger.error(f"YAKE keyword extraction failed: {e}")
+        return ["speech", "topic"]
+    
 def detect_filler_words(text):
     fillers = ["uh", "um", "like", "you know", "so", "actually", "basically"]
     word_list = text.lower().split()
