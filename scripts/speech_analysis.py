@@ -40,7 +40,7 @@ def transcribe_speech(audio_path):
     import whisper
     try:
         logger.info(f"Starting transcription for {audio_path}")
-        model = whisper.load_model("small")
+        model = whisper.load_model("large")
         logger.info("Whisper model loaded successfully")
         result = model.transcribe(audio_path, language="en", task="transcribe", verbose=False)
         return result["text"]
