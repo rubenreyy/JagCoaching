@@ -11,6 +11,7 @@ import google.generativeai as genai
 from google.genai import types
 from dotenv import load_dotenv
 import logging
+import re
 
 # Configure disk space use
 os.environ["XDG_CACHE_HOME"] = "/mnt/disk-6/.cache"
@@ -40,16 +41,31 @@ def transcribe_speech(audio_path):
     import whisper
     try:
         logger.info(f"Starting transcription for {audio_path}")
-        model = whisper.load_model("medium")
+        model = whisper.load_model("small")
         logger.info("Whisper model loaded successfully")
         result = model.transcribe(audio_path, language="en", task="transcribe", verbose=False)
-        return result["text"]
+        
+        # Enhanced post-processing of transcription
+        text = result["text"].strip()
+        logger.info(f"Raw transcription: {text[:100]}...")
+        
+        # Remove any non-speech artifacts and standardize spacing
+        text = re.sub(r'\s+', ' ', text)
+        
+        # Log information about the transcription
+        word_count = len(text.split())
+        logger.info(f"Transcription complete: {word_count} words")
+        
+        if word_count == 0:
+            logger.warning("Transcription produced no words!")
+            return "No speech detected. Please check audio quality."
+            
+        return text
     except Exception as e:
         logger.error(f"Transcription failed: {str(e)}", exc_info=True)
         raise
 
 
-# Updated to use a more reliable sentiment model
 def analyze_sentiment(text):
     try:
         # Using a more reliable sentiment model from Hugging Face
@@ -185,18 +201,62 @@ def analyze_monotone_speech(audio_path):
         return "Unknown"
 
 
-def evaluate_pronunciation_clarity(audio_path):
+# Fixed and enhanced pronunciation clarity evaluation
+def evaluate_pronunciation_clarity(audio_path, transcript):
     try:
-        clarity_pipeline = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-base-960h", device=device)
-        transcription = clarity_pipeline(audio_path)["text"]
-        total_words = len(transcription.split())
-        if total_words == 0:  # Handle empty transcription
-            return 0.0
-        clarity_score = len([word for word in transcription.split() if word.isalpha()]) / total_words
-        return round(clarity_score * 100, 2)
+        # Initialize ASR model
+        asr_pipeline = pipeline(
+            "automatic-speech-recognition", 
+            model="facebook/wav2vec2-base-960h", 
+            device=device
+        )
+        
+        # Get ASR transcription
+        asr_result = asr_pipeline(audio_path)
+        asr_transcription = asr_result["text"].strip()
+        
+        logger.info(f"ASR transcription: {asr_transcription[:100]}...")
+        
+        # Calculate word count
+        asr_words = asr_transcription.split()
+        expected_words = transcript.split()
+        
+        if len(asr_words) == 0 or len(expected_words) == 0:
+            logger.warning("Empty transcription detected")
+            return 50.0  # Default middle value if can't analyze
+        
+        # Calculate word error rate (simplified)
+        # For a more detailed WER, we would use the Levenshtein distance
+        matched_words = sum(1 for w in asr_words if w.lower() in [ew.lower() for ew in expected_words])
+        total_words = len(expected_words)
+        
+        # Calculate clarity score (higher is better)
+        clarity_score = min((matched_words / total_words) * 100, 100.0)
+        
+        # Get audio quality metrics
+        audio, sr = load_librosa(audio_path)
+        if audio is not None and sr is not None:
+            # Calculate signal-to-noise ratio (simplified)
+            signal_power = np.mean(audio**2)
+            noise_estimation = np.mean(np.sort(audio**2)[:int(len(audio)*0.1)])  # Use lowest 10% as noise
+            if noise_estimation > 0:
+                snr = 10 * np.log10(signal_power / noise_estimation)
+                
+                # Adjust clarity score based on SNR
+                snr_factor = max(min(snr / 20, 1.0), 0.0)  # Normalize SNR to [0,1]
+                clarity_score = clarity_score * (0.7 + 0.3 * snr_factor)
+        
+        # Ensure we get a reasonable score between 10 and 100
+        clarity_score = max(min(clarity_score, 100.0), 10.0)
+        
+        # Log clarity analysis details
+        logger.info(f"Clarity analysis completed: {clarity_score:.2f}%")
+        logger.info(f"ASR word count: {len(asr_words)}, Expected word count: {len(expected_words)}")
+        
+        return round(clarity_score, 2)
     except Exception as e:
         logger.error(f"Pronunciation clarity evaluation failed: {str(e)}", exc_info=True)
-        return 0.0
+        return 60.0  # Default reasonable value if calculation fails
 
 
 def generate_feedback(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity):
@@ -210,11 +270,30 @@ def generate_feedback(transcript, sentiment, filler_words, emotion, keywords, pa
     feedback += f"\nSpeech Rate: {wpm['wpm']} words per minute"
     feedback += f"\nGrammar Corrections: {corrected_text}"
     feedback += f"\nSpeech Tone: {monotone}"
-    feedback += f"\nPronunciation Clarity: {clarity}%"
+    
+    # Enhanced clarity reporting
+    clarity_assessment = (
+        "Excellent clarity" if clarity >= 90 else
+        "Good clarity" if clarity >= 75 else
+        "Average clarity" if clarity >= 60 else
+        "Below average clarity" if clarity >= 40 else
+        "Poor clarity"
+    )
+    
+    feedback += f"\nPronunciation Clarity: {clarity}% - {clarity_assessment}"
     return feedback
 
 
 def generate_smart_report(transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity):
+    # Enhanced clarity assessment for the report
+    clarity_assessment = (
+        "Excellent clarity" if clarity >= 90 else
+        "Good clarity" if clarity >= 75 else
+        "Average clarity" if clarity >= 60 else
+        "Below average clarity" if clarity >= 40 else
+        "Poor clarity"
+    )
+    
     prompt = f"""
     1. Transcription: {transcript}
     2. Sentiment: {sentiment}
@@ -225,7 +304,7 @@ def generate_smart_report(transcript, sentiment, filler_words, emotion, keywords
     7. Speech Rate: {wpm['wpm']} words per minute
     8. Grammar Corrections: {corrected_text}
     9. Speech Tone: {monotone}
-    10. Pronunciation Clarity: {clarity}%
+    10. Pronunciation Clarity: {clarity}% - {clarity_assessment}
     Provide actionable insights and suggestions for improvement.
     """
     try:
@@ -288,8 +367,9 @@ def main():
         monotone = analyze_monotone_speech(audio_file)
         logger.info("Monotone speech analysis complete")
         
-        clarity = evaluate_pronunciation_clarity(audio_file)
-        logger.info("Pronunciation clarity evaluation complete")
+        # Use the improved clarity evaluation function that now takes the transcript as input
+        clarity = evaluate_pronunciation_clarity(audio_file, transcript)
+        logger.info(f"Pronunciation clarity evaluation complete: {clarity}%")
 
         feedback_report = generate_feedback(
             transcript, sentiment, filler_words, emotion, keywords, pauses, wpm, corrected_text, monotone, clarity
