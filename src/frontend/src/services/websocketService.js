@@ -10,7 +10,7 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.mockMode = false;
     // Use IPv4 localhost explicitly
-    this.apiBaseUrl = 'http://127.0.0.1:8000';
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
   }
 
   async connect(onConnect, onDisconnect) {

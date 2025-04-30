@@ -398,7 +398,7 @@ const LiveAnalysis = () => {
       console.log("Saving session data:", sessionData);
       
       // Use the correct API endpoint for saving sessions
-      const response = await fetch('http://localhost:8000/api/live/sessions', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/live/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

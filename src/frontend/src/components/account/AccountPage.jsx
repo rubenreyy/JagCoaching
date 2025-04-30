@@ -26,7 +26,7 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
           throw new Error('No authentication token found')
         }
         
-        const response = await fetch('http://localhost:8000/api/users/profile/', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile/`, {
           method: 'GET',
           mode: 'cors',
           credentials: 'include',

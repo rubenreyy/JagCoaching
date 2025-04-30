@@ -22,7 +22,7 @@ const Signup = ({ setCurrentPage }) => {
     }
 
     // Call the register API endpoint
-    fetch('http://localhost:8000/api/register', {
+    fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

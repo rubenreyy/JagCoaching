@@ -45,7 +45,7 @@ export function LiveSessionProvider({ children }) {
     if (!state.sessionId || !state.feedback) return;
     
     try {
-      const response = await fetch('/api/sessions', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

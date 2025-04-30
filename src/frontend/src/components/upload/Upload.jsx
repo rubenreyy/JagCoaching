@@ -64,8 +64,8 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
 
             // Use different endpoint based on file type
             const uploadEndpoint = isPowerPoint 
-                ? "http://localhost:8000/api/presentations/upload/" 
-                : "http://localhost:8000/api/videos/upload/";
+                ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/presentations/upload/` 
+                : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/videos/upload/`;
 
             const uploadResponse = await fetch(uploadEndpoint, {
                 method: "POST",
