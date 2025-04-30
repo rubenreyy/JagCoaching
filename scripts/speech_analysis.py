@@ -46,12 +46,12 @@ def transcribe_speech(audio_path):
     try:
         logger.info(f"Starting transcription for {audio_path}")
 
-        model_name = "openai/whisper-large-v2"
+        model_name = "openai/whisper-large"
         logger.info("Loading Whisper model and processor...")
 
         processor = WhisperProcessor.from_pretrained(model_name)
         model = WhisperForConditionalGeneration.from_pretrained(
-            model_name, from_tf=True
+            model_name
         )
         model.config = WhisperConfig(torchscript=True, return_timestamps=True, language="en",
                                  task="transcribe")
