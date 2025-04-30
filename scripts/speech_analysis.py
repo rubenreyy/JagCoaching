@@ -196,27 +196,74 @@ def analyze_emotion(audio_path):
         return [{"label": "neutral", "score": 1.0}]
 
 def extract_keywords(text):
-
+    """
+    Extract keywords from text using KeyBERT with improved robustness and diagnostics.
+    
+    Args:
+        text (str): The input text to extract keywords from
+        
+    Returns:
+        list: List of extracted keywords
+    """
+    # Input validation
+    if not text or not isinstance(text, str) or len(text.strip()) < 10:
+        logger.warning("Input text is too short or invalid")
+        return ["input", "invalid"]
+    
     try:
-        kw_model = KeyBERT()
+        
+        kw_model = KeyBERT(model='distilbert-base-nli-mean-tokens')
+        
+        
         keywords = kw_model.extract_keywords(
             text,
-            keyphrase_ngram_range=(1, 2),
+            keyphrase_ngram_range=(1, 2),  
             stop_words='english',
             top_n=5,
-            use_maxsum=True,
-            nr_candidates=20
+            use_mmr=True,
+            diversity=0.5,  
+            nr_candidates=30  
         )
-
-        logger.info(f"Keyword output: {keywords}")
+        
+        logger.info(f"Keyword extraction successful: {keywords}")
+        
+        # Validate results more carefully
+        if not keywords:
+            logger.warning("No keywords extracted, trying alternative approach")
+            # Alternative approach with different parameters
+            keywords = kw_model.extract_keywords(
+                text,
+                keyphrase_ngram_range=(1, 1),
+                stop_words='english',
+                top_n=5
+            )
+        
+        # If still no good results, try a simpler approach
         if not keywords or len(keywords) < 2:
-            raise ValueError("Too few keywords")
-
+            logger.warning("Still insufficient keywords, trying without MMR")
+            keywords = kw_model.extract_keywords(
+                text,
+                keyphrase_ngram_range=(1, 2),
+                stop_words='english',
+                top_n=5,
+                use_mmr=False
+            )
+        
+        # Final validation
+        if not keywords or len(keywords) < 2:
+            raise ValueError(f"Failed to extract meaningful keywords from the provided text: '{text[:100]}...'")
+            
         return [kw[0] for kw in keywords]
 
+    except ImportError as e:
+        logger.error(f"KeyBERT import failed: {e}")
+        return ["import", "error"]
+    except ValueError as e:
+        logger.warning(f"Keyword extraction failed with ValueError: {e}")
+        return ["extraction", "failed"]
     except Exception as e:
-        logger.warning(f"Fallback keywords used due to: {e}")
-        return ["presentation", "topic"]
+        logger.error(f"Unexpected error in keyword extraction: {type(e).__name__}: {e}")
+        return ["error", "unexpected"]
 
 
 
