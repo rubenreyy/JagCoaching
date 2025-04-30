@@ -63,11 +63,9 @@ class WebSocketService {
         }
       }
       
-      let wsBase = this.apiBaseUrl
-      .replace(/^http/, 'ws')       // http → ws
-      .replace(/\/api$/, '');       // remove trailing /api ONLY
-    
-      const wsUrl = `${wsBase}/live/ws/${this.sessionId}`;
+      let wsBase = this.apiBaseUrl.replace(/^http/, 'ws');
+      const wsUrl = `${wsBase}/live/ws/${this.sessionId}`; // KEEP /api in path!
+      
     
       
 
