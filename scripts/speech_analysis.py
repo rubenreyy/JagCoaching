@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import json
 import logging
 os.environ["XDG_CACHE_HOME"] = "/mnt/disk-6/.cache"
+os.environ["TRANSFORMERS_CACHE"] = "/mnt/disk-6/.hf_cache"
 
 import whisper
 load_dotenv("./.env.development")
@@ -81,6 +82,8 @@ def test_pipeline(audio_path):
 
 
 def analyze_sentiment(text):
+    device = 0 if torch.cuda.is_available() else -1
+
     """ Analyze sentiment with human-readable labels """
     sentiment_pipeline = pipeline(
         "sentiment-analysis", 
