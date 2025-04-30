@@ -201,9 +201,14 @@ def analyze_monotone_speech(audio_path):
         return "Unknown"
 
 
-# Fixed and enhanced pronunciation clarity evaluation
-def evaluate_pronunciation_clarity(audio_path, transcript):
+# Fixed pronunciation clarity evaluation
+def evaluate_pronunciation_clarity(audio_path, transcript=None):
     try:
+        # If no transcript is provided, use a fallback value
+        if transcript is None or not transcript or transcript == "No speech detected. Please check audio quality.":
+            logger.warning("No transcript provided for clarity evaluation, using fallback value")
+            return 60.0  # Default reasonable value
+            
         # Initialize ASR model
         asr_pipeline = pipeline(
             "automatic-speech-recognition", 
@@ -367,7 +372,7 @@ def main():
         monotone = analyze_monotone_speech(audio_file)
         logger.info("Monotone speech analysis complete")
         
-        # Use the improved clarity evaluation function that now takes the transcript as input
+        # Pass the transcript to the clarity evaluation function
         clarity = evaluate_pronunciation_clarity(audio_file, transcript)
         logger.info(f"Pronunciation clarity evaluation complete: {clarity}%")
 
