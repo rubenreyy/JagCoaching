@@ -68,29 +68,69 @@ def transcribe_speech(audio_path):
 
 def analyze_sentiment(text):
     try:
-        # Using a more reliable sentiment model from Hugging Face
-        sentiment_pipeline = pipeline(
-            "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english",
-            device=device if device != "cpu" else -1  # -1 for CPU
-        )
-        result = sentiment_pipeline(text)[0]
+        # Check for empty or very short text
+        if not text or len(text.strip()) < 10:
+            logger.warning("Text too short for sentiment analysis")
+            return {
+                "label": "Neutral",
+                "score": 0.5,
+                "suggestion": "Text too short for sentiment analysis."
+            }
+            
+        # Limit text size to prevent model issues
+        analysis_text = text[:1024] if len(text) > 1024 else text
         
-        # Map the result to your expected format
-        score = result["score"]
-        if result["label"] == "POSITIVE":
+        # Log steps for debugging
+        logger.info(f"Starting sentiment analysis on text (length: {len(analysis_text)})")
+        
+        # Using a more reliable sentiment model from Hugging Face
+        tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+        model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+        
+        # Move model to specific device with error handling
+        try:
+            if device != "cpu":
+                model = model.to(device)
+                logger.info(f"Sentiment model moved to {device}")
+            else:
+                logger.info("Using CPU for sentiment analysis")
+        except Exception as device_err:
+            logger.warning(f"Device error, falling back to CPU: {device_err}")
+            model = model.to("cpu")
+            
+        # Run inference with direct model control
+        inputs = tokenizer(analysis_text, return_tensors="pt", truncation=True, max_length=512)
+        if device != "cpu":
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            
+        with torch.no_grad():
+            outputs = model(**inputs)
+            
+        # Process scores
+        scores = torch.nn.functional.softmax(outputs.logits, dim=1)
+        positive_score = scores[0][1].item()
+        
+        # Map the result to expected format with more detailed analysis
+        if positive_score > 0.75:
+            label = "Very Positive"
+            suggestion = "Your strong positive tone helps engage the audience."
+        elif positive_score > 0.55:
             label = "Positive"
-            suggestion = "Your positive tone helps engage the audience."
-        elif result["label"] == "NEGATIVE":
+            suggestion = "Your positive tone is good for audience engagement."
+        elif positive_score < 0.35:
             label = "Negative"
-            suggestion = "Consider maintaining a more neutral tone."
+            suggestion = "Consider maintaining a more positive or neutral tone."
+        elif positive_score < 0.45:
+            label = "Slightly Negative"
+            suggestion = "Your tone leans slightly negative. Consider a more neutral approach."
         else:
             label = "Neutral"
             suggestion = "Your tone is well-balanced and professional."
             
+        logger.info(f"Sentiment analysis complete: {label} ({positive_score:.2f})")
         return {
             "label": label,
-            "score": score,
+            "score": positive_score,
             "suggestion": suggestion
         }
     except Exception as e:
