@@ -65,7 +65,6 @@ class WebSocketService {
       
       let wsBase = this.apiBaseUrl
       .replace(/^http/, 'ws')                
-      .replace(/\/api\/?$/, '')             
       .replace(/\/$/, '');                   
     
       const wsUrl = `${wsBase}/live/ws/${this.sessionId}`;
