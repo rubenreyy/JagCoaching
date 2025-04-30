@@ -199,12 +199,19 @@ def analyze_emotion(audio_path):
 def extract_keywords(text):
     try:
         kw_model = KeyBERT()
-        keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 2), stop_words='english', top_n=5)
-        return [kw[0] for kw in keywords]
+        keywords = kw_model.extract_keywords(
+            text,
+            keyphrase_ngram_range=(1, 2),
+            stop_words='english',
+            top_n=5,
+            use_mmr=True,
+            diversity=0.7
+        )
+        return [kw[0] for kw in keywords] if keywords else ["speech", "analysis"]
     except Exception as e:
         logger.error(f"Keyword extraction failed: {str(e)}", exc_info=True)
-        # Return fallback result
         return ["speech", "analysis"]
+
 
 
 def detect_pauses(audio_path):
