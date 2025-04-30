@@ -45,6 +45,8 @@ class Settings(BaseSettings):
 
     # Frontend Config
     REACT_APP_API_URL: str = "http://localhost:8000"
+    VITE_API_UR: str | None = None
+
 
     # CORS Settings
     ALLOWED_HOSTS: list = [
@@ -52,7 +54,7 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://localhost:8000",
         "ws://localhost:8000",
-        "https://your-production-domain.com",
+        "https://your-ngrok-subdomain.ngrok-free.app",
     ]
 
     ALLOWED_HEADERS: list = [
