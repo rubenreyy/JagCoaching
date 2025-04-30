@@ -12,6 +12,7 @@ from google.genai import types
 from dotenv import load_dotenv
 import json
 import logging
+import whisper
 # Load environment variables from .env file in scripts folder only
 load_dotenv("./.env.development")
 
@@ -45,44 +46,17 @@ def load_librosa(audio_path):
 def transcribe_speech(audio_path):
     try:
         logger.info(f"Starting transcription for {audio_path}")
-
-        model_name = "openai/whisper-large"
-        logger.info("Loading Whisper model and processor...")
-
-        processor = WhisperProcessor.from_pretrained("openai/whisper-small")
-        model = WhisperForConditionalGeneration.from_pretrained(
-            model_name, from_tf=True
-        )
-        model.config = WhisperConfig(torchscript=True, return_timestamps=True, language="en",
-                                 task="transcribe")
         
-        logger.info("Loading audio file...")
-        audio, sr = load_librosa(audio_path)
-        if audio is None:
-            raise ValueError("Failed to load audio file")
-            
-        logger.info("Processing audio through model...")
-        inputs = processor(audio, sampling_rate=sr, return_tensors="pt",
-                       truncation=False).input_features
-        inputs = inputs.to(device, dtype=torch.float32, non_blocking=True)
-        attention_mask = torch.ones(1, 2000).to(device)
-        model = model.to(device)
+    
+        model = whisper.load_model("large")
+        logger.info("Whisper model loaded successfully")
 
-        logger.info("Generating transcription...")
-        with torch.no_grad():
-            predicted_ids = model.generate(
-                input_features=inputs, 
-                attention_mask=attention_mask,
-                num_beams=1,
-                return_timestamps=True,
-                early_stopping=False,
-                language="en",
-                task="transcribe"
-            )
         
-        transcript = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+        logger.info("Transcribing audio...")
+        result = model.transcribe(audio_path, language="en", task="transcribe", verbose=False)
+
         logger.info("Transcription completed successfully")
-        return transcript
+        return result["text"]  
 
     except Exception as e:
         logger.error(f"Transcription failed: {str(e)}", exc_info=True)
