@@ -65,7 +65,8 @@ class WebSocketService {
       
       // Then establish WebSocket connection
       let wsBase = this.apiBaseUrl.replace(/^http/, 'ws');
-      const wsUrl = `${wsBase}/api/live/ws/${this.sessionId}`;
+      const wsUrl = `${wsBase}/live/ws/${this.sessionId}`;
+
       console.log(`Connecting to WebSocket at ${wsUrl}`);
             
       this.ws = new WebSocket(wsUrl);
