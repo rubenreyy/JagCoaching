@@ -83,7 +83,7 @@ app.add_middleware(
         "https://*.ngrok.io",
         "*" 
     ],
-    allow_credentials=true,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
