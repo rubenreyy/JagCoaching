@@ -1,4 +1,6 @@
 import { useState } from 'react'
+console.log("Using API URL:", import.meta.env.VITE_API_URL);
+
 
 const Signup = ({ setCurrentPage }) => {
   const [formData, setFormData] = useState({
