@@ -67,12 +67,16 @@ app.include_router(live_router.router, prefix="/api")
 app.include_router(presentations.router, prefix="/api")
 
 # Get allowed origins from environment or use defaults
+# Update the origins to include both localhost and the ngrok URL
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
+# Add wildcard for ngrok domains
+ngrok_origins = ["https://*.ngrok-free.app", "https://*.ngrok.io"]
 
 # Update the CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],  # Allow all origins temporarily for debugging
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
