@@ -49,7 +49,7 @@ def transcribe_speech(audio_path):
         logger.info(f"Starting transcription for {audio_path}")
         
     
-        model = whisper.load_model("large")
+        model = whisper.load_model("medium")
         logger.info("Whisper model loaded successfully")
 
         
