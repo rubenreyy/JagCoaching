@@ -17,6 +17,7 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [uploadedFileId, setUploadedFileId] = useState(null);
     const [isUploadComplete, setIsUploadComplete] = useState(false);
+    const [fileType, setFileType] = useState(null); // 'video' or 'presentation'
     const accessToken = localStorage.getItem("accessToken");
     
     console.log("Initial accessToken check:", accessToken);
@@ -27,6 +28,18 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
         
         console.log("Starting file upload...");
         setIsUploadComplete(false); // Reset upload state
+        
+        // Determine file type
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const isPowerPoint = ['ppt', 'pptx'].includes(fileExtension);
+        const isVideo = ['mp4', 'mov', 'avi'].includes(fileExtension);
+        
+        if (!isPowerPoint && !isVideo) {
+            alert("Unsupported file format. Please upload a video (.mp4, .mov, .avi) or PowerPoint presentation (.ppt, .pptx)");
+            return;
+        }
+        
+        setFileType(isPowerPoint ? 'presentation' : 'video');
         
         // Clear previous upload state
         setFiles([file]);
@@ -49,7 +62,12 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
             const formData = new FormData();
             formData.append("file", file);
 
-            const uploadResponse = await fetch("http://localhost:8000/api/videos/upload/", {
+            // Use different endpoint based on file type
+            const uploadEndpoint = isPowerPoint 
+                ? "http://localhost:8000/api/presentations/upload/" 
+                : "http://localhost:8000/api/videos/upload/";
+
+            const uploadResponse = await fetch(uploadEndpoint, {
                 method: "POST",
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -89,49 +107,64 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
             delete newProgress[fileName];
             return newProgress;
         });
+        setFileType(null);
     };
 
     const handleAnalyze = async () => {
-        if (!uploadedFileId || !isUploadComplete) {
-            console.error("Cannot analyze: No file uploaded or upload not complete");
+        if (!isUploadComplete || !uploadedFileId) {
+            console.error("No file uploaded or upload not complete");
             return;
         }
-
+        
         setIsAnalyzing(true);
         
-        // Set to false to use real data
-        const USE_MOCK_DATA = false;
-        
         try {
-            if (USE_MOCK_DATA) {
-                console.log("Using mock data for testing");
-                setTimeout(() => {
-                    setFeedbackData(mockFeedbackData);
-                    setIsAnalyzing(false);
-                    setCurrentPage('feedback');
-                }, 3000);
-                return;
-            }
-
-            console.log("Starting analysis for file:", uploadedFileId);
-            const response = await fetch("http://localhost:8000/api/videos/process-audio/", {
-                method: "POST",
+            console.log(`Starting analysis for ${fileType} file:`, files[0].name);
+            
+            // Use different endpoint based on file type
+            const analysisEndpoint = fileType === 'presentation'
+                ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/presentations/analyze/`
+                : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/videos/process-audio/`;
+            
+            const response = await fetch(analysisEndpoint, {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
                 },
-                body: JSON.stringify({ file_name: uploadedFileId }),
+                body: JSON.stringify({ 
+                    file_name: files[0].name,
+                    file_type: fileType
+                })
             });
-
+            
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Processing failed');
+                let errorMessage = 'Analysis failed';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || 'Analysis failed';
+                } catch (e) {
+                    // If response is not JSON, try to get text
+                    const errorText = await response.text();
+                    errorMessage = errorText || 'Analysis failed';
+                }
+                throw new Error(errorMessage);
             }
-
-            const analysisData = await response.json();
-            console.log("Analysis data received:", analysisData);
-            setFeedbackData(analysisData);
-            setCurrentPage('feedback');
+            
+            const data = await response.json();
+            console.log("Analysis complete:", data);
+            
+            // Add file type to the feedback data
+            const feedbackWithType = {
+                ...data,
+                feedback_type: fileType
+            };
+            
+            // Store the feedback data
+            setFeedbackData(feedbackWithType);
+            
+            // Navigate to feedback page
+            setCurrentPage("feedback");
         } catch (error) {
             console.error("Analysis failed:", error);
             alert(`Analysis failed: ${error.message}`);
@@ -176,10 +209,10 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
                                 type="file"
                                 className="sr-only"
                                 onChange={handleFileChange}
-                                accept=".mp4,.mov,.avi"
+                                accept=".mp4,.mov,.avi,.ppt,.pptx"
                             />
                             <p className="mt-4 text-sm font-mono text-[#8E8E8E]">
-                                Supported formats: .mp4, .mov, .avi (Max 500MB)
+                                Supported formats: .mp4, .mov, .avi, .ppt, .pptx (Max 500MB)
                             </p>
                         </div>
                     </CardContent>
@@ -197,6 +230,9 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
                                         <div className="flex items-center">
                                             <File className="h-5 w-5 text-[#8E8E8E] mr-3" />
                                             <span className="text-lg font-mono text-[#030303]">{file.name}</span>
+                                            <span className="ml-2 px-2 py-1 bg-gray-100 rounded text-xs">
+                                                {fileType === 'presentation' ? 'PowerPoint' : 'Video'}
+                                            </span>
                                         </div>
                                         <div className="flex items-center">
                                             {uploadProgress[file.name] === 100 ? (
@@ -239,10 +275,11 @@ const Upload = ({ setCurrentPage, setFeedbackData }) => {
                                 <AccordionTrigger>Upload Guidelines & Help</AccordionTrigger>
                                 <AccordionContent>
                                     <ul className="list-disc list-inside space-y-2 font-mono text-[#030303]">
-                                        <li>Supported file formats: .mp4, .mov, .avi</li>
+                                        <li>Video formats: .mp4, .mov, .avi</li>
+                                        <li>Presentation formats: .ppt, .pptx</li>
                                         <li>Maximum file size: 500MB per file</li>
-                                        <li>For best results, ensure your video has clear audio</li>
-                                        <li>If your file fails to upload, try reducing its size or using a different format</li>
+                                        <li>For video analysis: ensure your video has clear audio</li>
+                                        <li>For PowerPoint analysis: include clear text and relevant images</li>
                                     </ul>
                                     <button className="mt-6 px-6 py-2 border-2 border-[#EEEEEE] rounded-full font-mono font-semibold text-[#030303] hover:bg-primary hover:text-white hover:border-primary transition-colors flex items-center">
                                         <AlertCircle className="mr-2 h-4 w-4" />
