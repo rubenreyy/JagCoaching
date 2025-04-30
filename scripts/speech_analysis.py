@@ -197,7 +197,7 @@ def analyze_emotion(audio_path):
 
 def extract_keywords(text):
     """
-    Extract keywords from text using KeyBERT with improved robustness and diagnostics.
+    Extract keywords from text using KeyBERT with improved error handling.
     
     Args:
         text (str): The input text to extract keywords from
@@ -211,61 +211,68 @@ def extract_keywords(text):
         return ["input", "invalid"]
     
     try:
+        # Import separately to catch import errors
+        from keybert import KeyBERT
         
-        kw_model = KeyBERT(model='distilbert-base-nli-mean-tokens')
+        # Create model explicitly without specifying model path (use default)
+        kw_model = KeyBERT()
         
+        # Debug logging
+        logger.info(f"KeyBERT model created successfully")
+        logger.info(f"Processing text (first 50 chars): {text[:50]}...")
         
+        # Extract keywords with simpler parameters first
         keywords = kw_model.extract_keywords(
             text,
-            keyphrase_ngram_range=(1, 2),  
+            keyphrase_ngram_range=(1, 1),  # Single words only for stability
             stop_words='english',
             top_n=5,
-            use_mmr=True,
-            diversity=0.5,  
-            nr_candidates=30  
+            use_maxsum=True,  # Try to use maxsum instead of mmr for robustness
+            nr_candidates=20
         )
         
-        logger.info(f"Keyword extraction successful: {keywords}")
+        logger.info(f"Keyword extraction attempt 1 result: {keywords}")
         
-        # Validate results more carefully
-        if not keywords:
-            logger.warning("No keywords extracted, trying alternative approach")
-            # Alternative approach with different parameters
-            keywords = kw_model.extract_keywords(
-                text,
-                keyphrase_ngram_range=(1, 1),
-                stop_words='english',
-                top_n=5
-            )
-        
-        # If still no good results, try a simpler approach
+        # If we don't have enough keywords, try again with different parameters
         if not keywords or len(keywords) < 2:
-            logger.warning("Still insufficient keywords, trying without MMR")
-            keywords = kw_model.extract_keywords(
-                text,
-                keyphrase_ngram_range=(1, 2),
-                stop_words='english',
-                top_n=5,
-                use_mmr=False
-            )
-        
-        # Final validation
-        if not keywords or len(keywords) < 2:
-            raise ValueError(f"Failed to extract meaningful keywords from the provided text: '{text[:100]}...'")
+            logger.warning("First attempt yielded insufficient keywords, trying second approach")
             
-        return [kw[0] for kw in keywords]
-
+            # Try with bigrams now
+            keywords = kw_model.extract_keywords(
+                text,
+                keyphrase_ngram_range=(1, 2),  # Single words and bigrams
+                stop_words='english', 
+                top_n=5,
+                use_maxsum=True,
+                nr_candidates=20
+            )
+            
+            logger.info(f"Keyword extraction attempt 2 result: {keywords}")
+        
+        # Return the keywords if we have at least 2
+        if keywords and len(keywords) >= 2:
+            return [kw[0] for kw in keywords]
+            
+        # If we reached here, we had extraction issues
+        raise ValueError("KeyBERT couldn't extract meaningful keywords")
+        
     except ImportError as e:
         logger.error(f"KeyBERT import failed: {e}")
         return ["import", "error"]
     except ValueError as e:
         logger.warning(f"Keyword extraction failed with ValueError: {e}")
-        return ["extraction", "failed"]
+        return ["extraction", "failed"]  
     except Exception as e:
+        # Catch all other exceptions
         logger.error(f"Unexpected error in keyword extraction: {type(e).__name__}: {e}")
-        return ["error", "unexpected"]
-
-
+        
+        # Ensure we return something sensible even if we hit unknown errors
+        if "keywords" in locals() and keywords and len(keywords) >= 1:
+            # We got at least one keyword, so return what we have
+            return [kw[0] for kw in keywords]
+        else:
+            # Complete fallback
+            return ["analysis", "content"]
 
 def detect_pauses(audio_path):
     try:
