@@ -12,8 +12,9 @@ from google.genai import types
 from dotenv import load_dotenv
 import json
 import logging
+os.environ["XDG_CACHE_HOME"] = "/mnt/disk-6/.cache"
+
 import whisper
-# Load environment variables from .env file in scripts folder only
 load_dotenv("./.env.development")
 
 """ Speech Analysis Pipeline """
