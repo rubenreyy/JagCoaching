@@ -195,7 +195,6 @@ def analyze_emotion(audio_path):
         # Return fallback result if emotion analysis fails
         return [{"label": "neutral", "score": 1.0}]
 
-
 def extract_keywords(text):
     try:
         kw_model = KeyBERT()
@@ -207,10 +206,13 @@ def extract_keywords(text):
             use_mmr=True,
             diversity=0.7
         )
-        return [kw[0] for kw in keywords] if keywords else ["speech", "analysis"]
+        logger.info(f"Extracted keywords: {keywords}")
+        if not keywords or len(keywords) < 2:
+            return ["general", "topic"]
+        return [kw[0] for kw in keywords]
     except Exception as e:
         logger.error(f"Keyword extraction failed: {str(e)}", exc_info=True)
-        return ["speech", "analysis"]
+        return ["general", "topic"]
 
 
 
