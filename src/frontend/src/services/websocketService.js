@@ -30,6 +30,8 @@ class WebSocketService {
         if (!settled) {
           settled = true;
           clearTimeout(timeoutId);
+          // Prevent further reconnect attempts after successful connection
+          this.reconnectAttempts = 0;
           resolve(...args);
         }
       }
