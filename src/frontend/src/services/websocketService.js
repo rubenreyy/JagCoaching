@@ -16,7 +16,7 @@ class WebSocketService {
 
   async connect(onConnect, onDisconnect) {
     // If already connecting or connected, disconnect first
-    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
+    if (this.isConnecting || (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING))) {
       await this.disconnect();
     }
 
@@ -85,10 +85,16 @@ class WebSocketService {
           }
         }
 
-        let wsBase = this.apiBaseUrl.replace(/^http(s?):/, 'ws$1:');
-
-        // Always ensure /api prefix is added once
-        const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
+        // Robust WebSocket URL construction
+        let wsBase;
+        try {
+          const urlObj = new URL(this.apiBaseUrl);
+          urlObj.protocol = urlObj.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsBase = urlObj.toString().replace(/\/$/, '');
+        } catch (e) {
+          wsBase = this.apiBaseUrl.replace(/^http(s?):/, 'ws$1:').replace(/\/$/, '');
+        }
+        const wsUrl = `${wsBase}/api/live/ws/${this.sessionId}`;
 
         // Log the WebSocket URL including the port
         try {
@@ -112,7 +118,7 @@ class WebSocketService {
           clearTimeout(timeoutId);
           console.log('WebSocket connection established');
           this.isConnecting = false;
-          this.reconnectAttempts = 1;
+          this.reconnectAttempts = 0; // Reset to 0 on successful connection
           if (onConnect) onConnect();
           safeResolve(); // <-- resolves the promise when connected
         };
@@ -129,13 +135,14 @@ class WebSocketService {
 
           // Attempt to reconnect if not intentionally closed
           if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-            console.log(`Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
             this.reconnectAttempts++;
+            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
             setTimeout(() => this.connect(onConnect, onDisconnect), 2000);
           }
 
           // Only reject if not reconnecting
           if (event.code !== 1000 && this.reconnectAttempts >= this.maxReconnectAttempts) {
+            this.isConnecting = false;
             safeReject(new Error('WebSocket closed abnormally and max reconnects reached'));
           }
         };
@@ -144,7 +151,13 @@ class WebSocketService {
           clearTimeout(timeoutId);
           console.error('WebSocket error:', error);
           this.isConnecting = false; // <-- Ensure flag is reset
-          safeReject(error); // <-- rejects the promise on error
+          // Attempt to reconnect on error
+          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectAttempts++;
+            setTimeout(() => this.connect(onConnect, onDisconnect), 2000);
+          } else {
+            safeReject(error);
+          }
         };
 
         this.ws.onmessage = (event) => {
@@ -284,8 +297,10 @@ class WebSocketService {
 
     this.isConnecting = false;
     this.sessionId = null;
-    this.handlers.clear();
-    this.mockMode = false;
+    // Do NOT clear handlers here, so they persist across reconnects
+    if (!this.mockMode) {
+      this.mockMode = false;
+    }
   }
 }
 
