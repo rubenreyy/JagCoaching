@@ -73,7 +73,9 @@ class WebSocketService {
     
       
 
-      console.log(`Connecting to WebSocket at ${wsUrl}`);
+      // Log the WebSocket URL including the port
+      const urlObj = new URL(wsUrl);
+      console.log(`Connecting to WebSocket at ${urlObj.hostname}:${urlObj.port}${urlObj.pathname}`);
             
       this.ws = new WebSocket(wsUrl);
       
