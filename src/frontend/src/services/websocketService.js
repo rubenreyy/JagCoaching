@@ -15,9 +15,9 @@ class WebSocketService {
   }
 
   async connect(onConnect, onDisconnect) {
-    if (this.isConnecting) {
-      console.log('Connection already in progress');
-      return;
+    // If already connecting or connected, disconnect first
+    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
+      await this.disconnect();
     }
 
     this.isConnecting = true;
@@ -117,6 +117,7 @@ class WebSocketService {
 
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
+          this.isConnecting = false; // <-- Ensure flag is reset
           reject(error); // <-- rejects the promise on error
         };
 
@@ -242,10 +243,19 @@ class WebSocketService {
     }
 
     if (this.ws) {
-      this.ws.close();
+      try {
+        this.ws.onclose = null;
+        this.ws.onerror = null;
+        this.ws.onopen = null;
+        this.ws.onmessage = null;
+        this.ws.close();
+      } catch (e) {
+        console.warn('Error during WebSocket disconnect:', e);
+      }
       this.ws = null;
     }
 
+    this.isConnecting = false;
     this.sessionId = null;
     this.handlers.clear();
     this.mockMode = false;
