@@ -3,6 +3,9 @@ import { liveSessionReducer, initialState } from '../reducers/liveSessionReducer
 
 const LiveSessionContext = createContext(null);
 
+// IMPORTANT: Do NOT import useWebSocket or any hook that uses this context here.
+// This avoids circular dependencies between context and websocket logic.
+
 export function LiveSessionProvider({ children }) {
   const [state, dispatch] = useReducer(liveSessionReducer, initialState);
 
@@ -76,4 +79,4 @@ export function useLiveSession() {
     throw new Error('useLiveSession must be used within a LiveSessionProvider');
   }
   return context;
-} 
+}
