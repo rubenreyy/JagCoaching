@@ -63,19 +63,27 @@ class WebSocketService {
         }
       }
       
-      let wsBase = this.apiBaseUrl.replace(/^http(s?):/, 'ws$1:');
+      // --- BEGIN: Improved protocol handling for ngrok ---
+      let wsBase;
+      if (this.apiBaseUrl.startsWith('https://')) {
+        wsBase = this.apiBaseUrl.replace(/^https:/, 'wss:');
+      } else if (this.apiBaseUrl.startsWith('http://')) {
+        wsBase = this.apiBaseUrl.replace(/^http:/, 'ws:');
+      } else {
+        wsBase = this.apiBaseUrl;
+      }
+      // --- END: Improved protocol handling for ngrok ---
 
       // Always ensure /api prefix is added once
       const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
-      
-      
-      
-    
-      
 
       // Log the WebSocket URL including the port
-      const urlObj = new URL(wsUrl);
-      console.log(`Connecting to WebSocket at ${urlObj.hostname}:${urlObj.port}${urlObj.pathname}`);
+      try {
+        const urlObj = new URL(wsUrl);
+        console.log(`Connecting to WebSocket at ${urlObj.protocol}//${urlObj.hostname}:${urlObj.port}${urlObj.pathname}`);
+      } catch (e) {
+        console.warn('Could not parse WebSocket URL:', wsUrl);
+      }
             
       this.ws = new WebSocket(wsUrl);
       
@@ -88,6 +96,9 @@ class WebSocketService {
       
       this.ws.onclose = (event) => {
         console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
+        if (event.code !== 1000) {
+          console.warn('WebSocket closed abnormally. Check backend/ngrok logs for details.');
+        }
         this.ws = null;
         
         if (onDisconnect) onDisconnect();
@@ -102,6 +113,10 @@ class WebSocketService {
       
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        // Add more details if available
+        if (this.ws && this.ws.readyState === WebSocket.CLOSED) {
+          console.error('WebSocket readyState is CLOSED immediately after error.');
+        }
       };
       
       this.ws.onmessage = (event) => {
@@ -237,4 +252,4 @@ class WebSocketService {
 
 // Create a singleton instance
 const wsService = new WebSocketService();
-export default wsService; 
+export default wsService;
