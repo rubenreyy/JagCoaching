@@ -21,64 +21,58 @@ class WebSocketService {
     }
 
     this.isConnecting = true;
-
-    return new Promise(async (resolve, reject) => {
+    
+    try {
+      // First, try to get a session ID from the server
+      let response;
       try {
-        // First, try to get a session ID from the server
-        let response;
-        try {
-          // Use the explicit IPv4 URL
-          response = await fetch(`${this.apiBaseUrl}/api/live/session/start`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to start session: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          this.sessionId = data.session_id;
-          console.log(`Session started with ID: ${this.sessionId}`);
-        } catch (err) {
-          console.error('Error starting session:', err);
-
-          // If server is unavailable, switch to mock mode
-          if (err.message.includes('Failed to fetch') || 
-              err.message.includes('NetworkError') || 
-              err.message.includes('Failed to start session')) {
-            console.warn('Server unavailable, switching to mock mode');
-            this.mockMode = true;
-            this.sessionId = 'mock-session-' + Date.now();
-
-            // Simulate successful connection
-            setTimeout(() => {
-              this.isConnecting = false;
-              if (onConnect) onConnect();
-              resolve();
-            }, 500);
-
-            return;
-          } else {
-            throw err;
-          }
+        // Use the explicit IPv4 URL
+        response = await fetch(`${this.apiBaseUrl}/api/live/session/start`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to start session: ${response.statusText}`);
         }
-
-        // --- BEGIN: Improved protocol handling for ngrok ---
-        let wsBase;
-        if (this.apiBaseUrl.startsWith('https://')) {
-          wsBase = this.apiBaseUrl.replace(/^https:/, 'wss:');
-        } else if (this.apiBaseUrl.startsWith('http://')) {
-          wsBase = this.apiBaseUrl.replace(/^http:/, 'wss:');
+        
+        const data = await response.json();
+        this.sessionId = data.session_id;
+        console.log(`Session started with ID: ${this.sessionId}`);
+      } catch (err) {
+        console.error('Error starting session:', err);
+        
+        // If server is unavailable, switch to mock mode
+        if (err.message.includes('Failed to fetch') || 
+            err.message.includes('NetworkError') || 
+            err.message.includes('Failed to start session')) {
+          console.warn('Server unavailable, switching to mock mode');
+          this.mockMode = true;
+          this.sessionId = 'mock-session-' + Date.now();
+          
+          // Simulate successful connection
+          setTimeout(() => {
+            this.isConnecting = false;
+            if (onConnect) onConnect();
+          }, 500);
+          
+          return;
         } else {
-          wsBase = this.apiBaseUrl;
+          throw err;
         }
-        // --- END: Improved protocol handling for ngrok ---
+      }
+      
+      let wsBase = this.apiBaseUrl.replace(/^http(s?):/, 'ws$1:');
 
-        // Always ensure /api prefix is added once
-        const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
+      // Always ensure /api prefix is added once
+      const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
+      
+      
+      
+    
+      
 
         // Log the WebSocket URL including the port
         try {
@@ -264,4 +258,4 @@ class WebSocketService {
 
 // Create a singleton instance
 const wsService = new WebSocketService();
-export default wsService;
+export default wsService; 
