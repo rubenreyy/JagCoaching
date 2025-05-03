@@ -80,7 +80,7 @@ class WebSocketService {
       this.ws.onopen = () => {
         console.log('WebSocket connection established');
         this.isConnecting = false;
-        this.reconnectAttempts = 0;
+        this.reconnectAttempts = 1;
         if (onConnect) onConnect();
       };
       
