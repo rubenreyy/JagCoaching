@@ -514,43 +514,43 @@ const LiveAnalysis = () => {
               <h3 className="text-xl font-semibold">Session Summary</h3>
 
               {/* Eye Contact Summary */}
-              <div className={`p-4 rounded-lg ${state.feedback.session_summary.eyeContact.status === 'positive' ? 'bg-green-100' :
-                state.feedback.session_summary.eyeContact.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              <div className={`p-4 rounded-lg ${state.feedback.session_summary?.eyeContact?.status === 'positive' ? 'bg-green-100' :
+                  state.feedback.session_summary?.eyeContact?.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
                 }`}>
                 <h3 className="font-semibold mb-2">👁️ Eye Contact</h3>
-                <p>{state.feedback.session_summary.eyeContact.message}</p>
+                <p>{state.feedback.session_summary?.eyeContact?.message || "No data"}</p>
               </div>
 
               {/* Expressions Summary */}
-              <div className={`p-4 rounded-lg ${state.feedback.session_summary.expressions.status === 'positive' ? 'bg-green-100' :
-                state.feedback.session_summary.expressions.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              <div className={`p-4 rounded-lg ${state.feedback.session_summary?.expressions?.status === 'positive' ? 'bg-green-100' :
+                  state.feedback.session_summary?.expressions?.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
                 }`}>
                 <h3 className="font-semibold mb-2">😊 Expressions</h3>
-                <p>{state.feedback.session_summary.expressions.message}</p>
+                <p>{state.feedback.session_summary?.expressions?.message || "No data"}</p>
               </div>
 
               {/* Posture Summary */}
-              <div className={`p-4 rounded-lg ${state.feedback.session_summary.posture.status === 'positive' ? 'bg-green-100' :
-                state.feedback.session_summary.posture.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              <div className={`p-4 rounded-lg ${state.feedback.session_summary?.posture?.status === 'positive' ? 'bg-green-100' :
+                  state.feedback.session_summary?.posture?.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
                 }`}>
                 <h3 className="font-semibold mb-2">🧍 Posture</h3>
-                <p>{state.feedback.session_summary.posture.message}</p>
+                <p>{state.feedback.session_summary?.posture?.message || "No data"}</p>
               </div>
 
               {/* Voice Summary */}
-              <div className={`p-4 rounded-lg ${state.feedback.session_summary.voice.status === 'positive' ? 'bg-green-100' :
-                state.feedback.session_summary.voice.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              <div className={`p-4 rounded-lg ${state.feedback.session_summary?.voice?.status === 'positive' ? 'bg-green-100' :
+                  state.feedback.session_summary?.voice?.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
                 }`}>
                 <h3 className="font-semibold mb-2">🔊 Voice</h3>
-                <p>{state.feedback.session_summary.voice.message}</p>
+                <p>{state.feedback.session_summary?.voice?.message || "No data"}</p>
               </div>
 
               {/* Overall Summary */}
-              <div className={`p-4 rounded-lg ${state.feedback.session_summary.overall.status === 'positive' ? 'bg-blue-100' :
-                state.feedback.session_summary.overall.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
+              <div className={`p-4 rounded-lg ${state.feedback.session_summary?.overall?.status === 'positive' ? 'bg-blue-100' :
+                  state.feedback.session_summary?.overall?.status === 'neutral' ? 'bg-yellow-100' : 'bg-red-100'
                 }`}>
                 <h3 className="font-semibold mb-2">💡 Overall Assessment</h3>
-                <p>{state.feedback.session_summary.overall.message}</p>
+                <p>{state.feedback.session_summary?.overall?.message || "No data"}</p>
               </div>
             </div>
           )}
