@@ -11,7 +11,7 @@ class WebSocketService {
     this.mockMode = false;
     this.port = 80; // Default port for local development
     // Use IPv4 localhost explicitly
-    this.apiBaseUrl = import.meta.env.VITE_API_URL || `http://localhost:${this.port}`;
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || `https://127.0.0.1:${this.port}`;
   }
 
   async connect(onConnect, onDisconnect) {
