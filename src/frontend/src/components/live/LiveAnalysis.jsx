@@ -7,7 +7,7 @@ import { WSMessageType } from '../../types/websocket';
 import StatusIndicator from './StatusIndicator';
 
 const LiveAnalysis = () => {
-  const { state, actions, persistSession } = useLiveSession();
+  const { state, actions } = useLiveSession();
   const [showFeedback, setShowFeedback] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [liveFeedbackText, setLiveFeedbackText] = useState({
