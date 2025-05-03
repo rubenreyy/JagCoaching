@@ -69,7 +69,7 @@ class WebSocketService {
       if (this.apiBaseUrl.startsWith('https://')) {
         wsBase = this.apiBaseUrl.replace(/^https:/, 'wss:');
       } else if (this.apiBaseUrl.startsWith('http://')) {
-        wsBase = this.apiBaseUrl.replace(/^http:/, 'ws:');
+        wsBase = this.apiBaseUrl.replace(/^http:/, 'wss:');
       } else {
         wsBase = this.apiBaseUrl;
       }
