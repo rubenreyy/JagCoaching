@@ -46,7 +46,7 @@ export function LiveSessionProvider({ children }) {
   // Add session persistence
   const persistSession = useCallback(async () => {
     if (!state.sessionId || !state.feedback) return;
-    
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions`, {
         method: 'POST',
@@ -57,7 +57,7 @@ export function LiveSessionProvider({ children }) {
           history: state.sessionHistory
         })
       });
-      
+
       if (!response.ok) throw new Error('Failed to save session');
       return response.json();
     } catch (error) {

@@ -10,7 +10,8 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.mockMode = false;
     this.port = 8000; // Default port for local development
-    // Use IPv4 localhost explicitly
+    // IMPORTANT: Set VITE_API_URL to your ngrok URL when using ngrok, e.g.
+    // VITE_API_URL=https://0729-104-154-154-32.ngrok-free.app
     this.apiBaseUrl = import.meta.env.VITE_API_URL || `http://127.0.0.1:${this.port}`;
   }
 
@@ -89,10 +90,15 @@ class WebSocketService {
         let wsBase;
         try {
           const urlObj = new URL(this.apiBaseUrl);
-          urlObj.protocol = urlObj.protocol === 'https:' ? 'wss:' : 'ws:';
+          // Always use wss: if page is https: or apiBaseUrl is https:
+          if (window.location.protocol === 'https:' || urlObj.protocol === 'https:') {
+            urlObj.protocol = 'wss:';
+          } else {
+            urlObj.protocol = 'ws:';
+          }
           wsBase = urlObj.toString().replace(/\/$/, '');
         } catch (e) {
-          wsBase = this.apiBaseUrl.replace(/^http(s?):/, 'ws$1:').replace(/\/$/, '');
+          wsBase = this.apiBaseUrl.replace(/^http(s?):/, (window.location.protocol === 'https:' ? 'wss:' : 'ws:')).replace(/\/$/, '');
         }
         const wsUrl = `${wsBase}/api/live/ws/${this.sessionId}`;
 
