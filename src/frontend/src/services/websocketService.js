@@ -24,6 +24,23 @@ class WebSocketService {
 
     return new Promise(async (resolve, reject) => {
       let timeoutId;
+      let settled = false; // Prevent multiple resolve/reject
+
+      function safeResolve(...args) {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timeoutId);
+          resolve(...args);
+        }
+      }
+      function safeReject(...args) {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timeoutId);
+          reject(...args);
+        }
+      }
+
       try {
         // First, try to get a session ID from the server
         let response;
@@ -58,12 +75,12 @@ class WebSocketService {
             setTimeout(() => {
               this.isConnecting = false;
               if (onConnect) onConnect();
-              resolve();
+              safeResolve();
             }, 500);
 
             return;
           } else {
-            reject(err);
+            safeReject(err);
             return;
           }
         }
@@ -87,7 +104,7 @@ class WebSocketService {
         timeoutId = setTimeout(() => {
           if (this.isConnecting) {
             this.isConnecting = false;
-            reject(new Error('WebSocket connection timed out'));
+            safeReject(new Error('WebSocket connection timed out'));
           }
         }, 10000); // 10 seconds
 
@@ -97,7 +114,7 @@ class WebSocketService {
           this.isConnecting = false;
           this.reconnectAttempts = 1;
           if (onConnect) onConnect();
-          resolve(); // <-- resolves the promise when connected
+          safeResolve(); // <-- resolves the promise when connected
         };
 
         this.ws.onclose = (event) => {
@@ -119,7 +136,7 @@ class WebSocketService {
 
           // Only reject if not reconnecting
           if (event.code !== 1000 && this.reconnectAttempts >= this.maxReconnectAttempts) {
-            reject(new Error('WebSocket closed abnormally and max reconnects reached'));
+            safeReject(new Error('WebSocket closed abnormally and max reconnects reached'));
           }
         };
 
@@ -127,7 +144,7 @@ class WebSocketService {
           clearTimeout(timeoutId);
           console.error('WebSocket error:', error);
           this.isConnecting = false; // <-- Ensure flag is reset
-          reject(error); // <-- rejects the promise on error
+          safeReject(error); // <-- rejects the promise on error
         };
 
         this.ws.onmessage = (event) => {
@@ -148,7 +165,7 @@ class WebSocketService {
         clearTimeout(timeoutId);
         console.error('Error connecting to WebSocket:', error);
         this.isConnecting = false;
-        reject(error); // <-- rejects the promise on error
+        safeReject(error); // <-- rejects the promise on error
       }
     });
   }
