@@ -9,7 +9,7 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.mockMode = false;
-    this.port = 8000; // Default port for local development
+    this.port = 80; // Default port for local development
     // IMPORTANT: Set VITE_API_URL to your ngrok URL when using ngrok, e.g.
     // VITE_API_URL=https://0729-104-154-154-32.ngrok-free.app
     this.apiBaseUrl = import.meta.env.VITE_API_URL || `http://127.0.0.1:${this.port}`;
