@@ -78,20 +78,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         # Process incoming messages
         try:
             while True:
-                try:
-                    # Wait for message with timeout
-                    message = await asyncio.wait_for(websocket.receive_json(), timeout=30)
-                except WebSocketDisconnect:
-                    logger.info(f"WebSocket disconnected for session {session_id} (inside receive loop)")
-                    break
-                except RuntimeError as e:
-                    # This can happen if the connection is closed (unexpected EOF)
-                    logger.warning(f"RuntimeError (possible unexpected EOF) in session {session_id}: {e}")
-                    break
-                except asyncio.TimeoutError:
-                    logger.warning(f"WebSocket timeout for session {session_id}")
-                    break
-
+                # Wait for message with timeout
+                message = await asyncio.wait_for(websocket.receive_json(), timeout=30)
+                
                 # Update last ping time
                 session_data["last_ping"] = datetime.now()
                 
@@ -405,4 +394,4 @@ async def stop_session(session_id: str):
         }
     except Exception as e:
         logger.error(f"Failed to stop session {session_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to stop session")
+        raise HTTPException(status_code=500, detail="Failed to stop session") 

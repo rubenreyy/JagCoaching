@@ -3,9 +3,6 @@ import { liveSessionReducer, initialState } from '../reducers/liveSessionReducer
 
 const LiveSessionContext = createContext(null);
 
-// IMPORTANT: Do NOT import useWebSocket or any hook that uses this context here.
-// This avoids circular dependencies between context and websocket logic.
-
 export function LiveSessionProvider({ children }) {
   const [state, dispatch] = useReducer(liveSessionReducer, initialState);
 
@@ -46,7 +43,7 @@ export function LiveSessionProvider({ children }) {
   // Add session persistence
   const persistSession = useCallback(async () => {
     if (!state.sessionId || !state.feedback) return;
-
+    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions`, {
         method: 'POST',
@@ -57,7 +54,7 @@ export function LiveSessionProvider({ children }) {
           history: state.sessionHistory
         })
       });
-
+      
       if (!response.ok) throw new Error('Failed to save session');
       return response.json();
     } catch (error) {
@@ -79,4 +76,4 @@ export function useLiveSession() {
     throw new Error('useLiveSession must be used within a LiveSessionProvider');
   }
   return context;
-}
+} 
