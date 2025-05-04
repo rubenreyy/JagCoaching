@@ -10,19 +10,21 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.mockMode = false;
     this.port = 80; // Default port for local development
-    // Use IPv4 localhost explicitly
-    this.apiBaseUrl = import.meta.env.VITE_API_URL || `https://127.0.0.1:${this.port}`;
+    // IMPORTANT: Set VITE_API_URL to your ngrok URL when using ngrok, e.g.
+    // VITE_API_URL=https://0729-104-154-154-32.ngrok-free.app
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || `http://127.0.0.1:${this.port}`;
   }
 
   async connect(onConnect, onDisconnect) {
     // If already connecting or connected, disconnect first
-    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
+    if (this.isConnecting || (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING))) {
       await this.disconnect();
     }
 
     this.isConnecting = true;
 
     return new Promise(async (resolve, reject) => {
+      let timeoutId;
       try {
         // First, try to get a session ID from the server
         let response;
@@ -46,9 +48,9 @@ class WebSocketService {
           console.error('Error starting session:', err);
 
           // If server is unavailable, switch to mock mode
-          if (err.message.includes('Failed to fetch') || 
-              err.message.includes('NetworkError') || 
-              err.message.includes('Failed to start session')) {
+          if (err.message.includes('Failed to fetch') ||
+            err.message.includes('NetworkError') ||
+            err.message.includes('Failed to start session')) {
             console.warn('Server unavailable, switching to mock mode');
             this.mockMode = true;
             this.sessionId = 'mock-session-' + Date.now();
@@ -62,23 +64,26 @@ class WebSocketService {
 
             return;
           } else {
-            throw err;
+            reject(err);
+            return;
           }
         }
 
-        // --- BEGIN: Improved protocol handling for ngrok ---
+        // Robust WebSocket URL construction
         let wsBase;
-        if (this.apiBaseUrl.startsWith('https://')) {
-          wsBase = this.apiBaseUrl.replace(/^https:/, 'wss:');
-        } else if (this.apiBaseUrl.startsWith('http://')) {
-          wsBase = this.apiBaseUrl.replace(/^http:/, 'wss:');
-        } else {
-          wsBase = this.apiBaseUrl;
+        try {
+          const urlObj = new URL(this.apiBaseUrl);
+          // Always use wss: if page is https: or apiBaseUrl is https:
+          if (window.location.protocol === 'https:' || urlObj.protocol === 'https:') {
+            urlObj.protocol = 'wss:';
+          } else {
+            urlObj.protocol = 'ws:';
+          }
+          wsBase = urlObj.toString().replace(/\/$/, '');
+        } catch (e) {
+          wsBase = this.apiBaseUrl.replace(/^http(s?):/, (window.location.protocol === 'https:' ? 'wss:' : 'ws:')).replace(/\/$/, '');
         }
-        // --- END: Improved protocol handling for ngrok ---
-
-        // Always ensure /api prefix is added once
-        const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
+        const wsUrl = `${wsBase}/api/live/ws/${this.sessionId}`;
 
         // Log the WebSocket URL including the port
         try {
@@ -90,15 +95,25 @@ class WebSocketService {
 
         this.ws = new WebSocket(wsUrl);
 
+        // Add a timeout to avoid unresolved promise
+        timeoutId = setTimeout(() => {
+          if (this.isConnecting) {
+            this.isConnecting = false;
+            reject(new Error('WebSocket connection timed out'));
+          }
+        }, 10000); // 10 seconds
+
         this.ws.onopen = () => {
+          clearTimeout(timeoutId);
           console.log('WebSocket connection established');
           this.isConnecting = false;
-          this.reconnectAttempts = 1;
+          this.reconnectAttempts = 0; // Reset to 0 on successful connection
           if (onConnect) onConnect();
           resolve(); // <-- resolves the promise when connected
         };
 
         this.ws.onclose = (event) => {
+          clearTimeout(timeoutId);
           console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
           if (event.code !== 1000) {
             console.warn('WebSocket closed abnormally. Check backend/ngrok logs for details.');
@@ -109,13 +124,19 @@ class WebSocketService {
 
           // Attempt to reconnect if not intentionally closed
           if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-            console.log(`Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
             this.reconnectAttempts++;
+            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
             setTimeout(() => this.connect(onConnect, onDisconnect), 2000);
+          }
+
+          // Only reject if not reconnecting
+          if (event.code !== 1000 && this.reconnectAttempts >= this.maxReconnectAttempts) {
+            reject(new Error('WebSocket closed abnormally and max reconnects reached'));
           }
         };
 
         this.ws.onerror = (error) => {
+          clearTimeout(timeoutId);
           console.error('WebSocket error:', error);
           this.isConnecting = false; // <-- Ensure flag is reset
           reject(error); // <-- rejects the promise on error
@@ -136,6 +157,7 @@ class WebSocketService {
           }
         };
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error('Error connecting to WebSocket:', error);
         this.isConnecting = false;
         reject(error); // <-- rejects the promise on error
@@ -257,8 +279,10 @@ class WebSocketService {
 
     this.isConnecting = false;
     this.sessionId = null;
-    this.handlers.clear();
-    this.mockMode = false;
+    // Do NOT clear handlers here, so they persist across reconnects
+    if (!this.mockMode) {
+      this.mockMode = false;
+    }
   }
 }
 
