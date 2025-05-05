@@ -45,7 +45,7 @@ async def start_session():
         logger.error(f"Failed to start session: {e}")
         raise HTTPException(status_code=500, detail="Failed to initialize session")
 
-@router.websocket("api/live/ws/{session_id}")
+@router.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for live analysis"""
     try:
