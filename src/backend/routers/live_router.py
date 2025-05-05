@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
 router = APIRouter(
-    prefix="/live",
+    prefix="/api/live",
     tags=["live analysis"],
 )
 
