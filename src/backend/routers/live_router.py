@@ -24,7 +24,6 @@ router = APIRouter(
     prefix="/api/live",
     tags=["live analysis"],
 )
-
 # Message types for WebSocket communication
 class WSMessageType:
     VIDEO_FRAME = "video_frame"
@@ -51,8 +50,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     try:
         # Accept the connection first
         await websocket.accept()
-        logger.info(f"WebSocket connection accepted for session {session_id}")
-        
+        logger.info(
+            "WebSocket connection accepted for session %s",
+            session_id,
+        )
+
         # Initialize session data with metrics tracking
         session_data = {
             "last_ping": datetime.now(),
@@ -60,56 +62,107 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             "last_frame": None,
             "last_audio": None,
             "metrics": {
-                "eye_contact": {"yes": 0, "limited": 0, "total": 0},
-                "emotion": {"happy": 0, "neutral": 0, "sad": 0, "angry": 0, "surprise": 0, "total": 0},
-                "posture": {"good": 0, "poor": 0, "total": 0},
-                "audio_quality": {"excellent": 0, "good": 0, "moderate": 0, "low": 0, "none": 0, "total": 0}
-            }
+                "eye_contact": {
+                    "yes": 0,
+                    "limited": 0,
+                    "total": 0,
+                },
+                "emotion": {
+                    "happy": 0,
+                    "neutral": 0,
+                    "sad": 0,
+                    "angry": 0,
+                    "surprise": 0,
+                    "total": 0,
+                },
+                "posture": {
+                    "good": 0,
+                    "poor": 0,
+                    "total": 0,
+                },
+                "audio_quality": {
+                    "excellent": 0,
+                    "good": 0,
+                    "moderate": 0,
+                    "low": 0,
+                    "none": 0,
+                    "total": 0,
+                },
+            },
         }
-        
+
         # Register connection with manager
         await manager.connect(session_id, websocket)
-        
+
         # Start periodic feedback task
         feedback_task = asyncio.create_task(
             periodic_feedback(websocket, session_id, session_data)
         )
-        
+
+        # Helper function for message handling to reduce complexity
+        async def handle_message(message, session_data):
+            msg_type = message.get("type")
+            if msg_type == WSMessageType.PING:
+                await websocket.send_json({"type": WSMessageType.PONG})
+
+            elif msg_type == WSMessageType.VIDEO_FRAME:
+                # Log only once per second instead of every frame
+                current_time = datetime.now()
+                if (
+                    not hasattr(websocket_endpoint, "last_frame_log")
+                    or (
+                        current_time
+                        - websocket_endpoint.last_frame_log
+                    ).total_seconds()
+                    > 1
+                ):
+                    logger.debug(
+                        "Received video frame from session %s",
+                        session_id,
+                    )
+                    websocket_endpoint.last_frame_log = current_time
+
+                # Store the frame for analysis
+                session_data["last_frame"] = message["data"]
+
+            elif msg_type == WSMessageType.AUDIO_CHUNK:
+                logger.debug(
+                    "Received audio chunk from session %s",
+                    session_id,
+                )
+                session_data["last_audio"] = message["data"]
+
+            else:
+                logger.warning(
+                    "Received unknown message type from session %s: %s",
+                    session_id,
+                    message.get("type"),
+                )
+
         # Process incoming messages
         try:
             while True:
                 # Wait for message with timeout
-                message = await asyncio.wait_for(websocket.receive_json(), timeout=30)
-                
+                message = await asyncio.wait_for(
+                    websocket.receive_json(), timeout=30
+                )
+
                 # Update last ping time
                 session_data["last_ping"] = datetime.now()
-                
+
                 # Process message based on type
-                if message["type"] == WSMessageType.PING:
-                    await websocket.send_json({"type": WSMessageType.PONG})
-                
-                elif message["type"] == WSMessageType.VIDEO_FRAME:
-                    # Log only once per second instead of every frame
-                    current_time = datetime.now()
-                    if not hasattr(websocket_endpoint, "last_frame_log") or \
-                       (current_time - websocket_endpoint.last_frame_log).total_seconds() > 1:
-                        logger.debug(f"Received video frame from session {session_id}")
-                        websocket_endpoint.last_frame_log = current_time
-                    
-                    # Store the frame for analysis
-                    session_data["last_frame"] = message["data"]
-                
-                elif message["type"] == WSMessageType.AUDIO_CHUNK:
-                    logger.debug(f"Received audio chunk from session {session_id}")
-                    session_data["last_audio"] = message["data"]
-                
-                else:
-                    logger.warning(f"Received unknown message type from session {session_id}: {message['type']}")
-        
+                await handle_message(message, session_data)
+
         except WebSocketDisconnect:
-            logger.info(f"WebSocket disconnected for session {session_id}")
+            logger.info(
+                "WebSocket disconnected for session %s",
+                session_id,
+            )
         except asyncio.TimeoutError:
-            logger.warning(f"WebSocket timeout for session {session_id}")
+            logger.warning(
+                "WebSocket timeout for session %s",
+                session_id,
+            )
         finally:
             # Cancel feedback task
             feedback_task.cancel()
@@ -117,16 +170,24 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 await feedback_task
             except asyncio.CancelledError:
                 pass
-            
+
             # Disconnect from manager
             await manager.disconnect(session_id)
-            logger.info(f"Session {session_id} disconnected and cleanup complete")
-    
+            logger.info(
+                "Session %s disconnected and cleanup complete",
+                session_id,
+            )
+
     except Exception as e:
-        logger.error(f"Error in WebSocket endpoint for session {session_id}: {e}", exc_info=True)
+        logger.error(
+            "Error in WebSocket endpoint for session %s: %s",
+            session_id,
+            e,
+            exc_info=True,
+        )
         try:
             await manager.disconnect(session_id)
-        except:
+        except Exception:
             pass
 
 # ADDED: New function to send initial feedback
