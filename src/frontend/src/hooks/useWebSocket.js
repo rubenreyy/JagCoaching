@@ -80,7 +80,10 @@ export const useWebSocket = () => {
     });
 
     return () => {
-      disconnect(); // <-- closes socket on component unmount
+      // Only disconnect if actually connected
+      if (wsService.ws && wsService.ws.readyState === WebSocket.OPEN) {
+        disconnect();
+      }
     };
   }, [disconnect]);
 

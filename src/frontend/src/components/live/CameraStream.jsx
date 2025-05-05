@@ -10,7 +10,7 @@ const AUDIO_CHUNK_SIZE = 3000; // Send audio every 3 seconds
 const CameraStream = ({ onError, isRecording }) => {
   // Add performance monitoring
   usePerformanceMonitor('CameraStream');
-  
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const canvasRef = useRef(document.createElement('canvas'));
@@ -18,12 +18,12 @@ const CameraStream = ({ onError, isRecording }) => {
   const audioChunksRef = useRef([]);
   const audioIntervalRef = useRef(null);
   const mediaRecorderRef = useRef(null);
-  
+
   const [cameraInitialized, setCameraInitialized] = useState(false);
   const [cameraError, setCameraError] = useState(null);
-  
+
   const { sendVideoFrame, sendAudioChunk, isConnected } = useWebSocket();
-  
+
   // Log state changes for debugging
   useEffect(() => {
     console.log(`Video recording state changed: ${isRecording}, Connected: ${isConnected}`);
@@ -35,7 +35,7 @@ const CameraStream = ({ onError, isRecording }) => {
       try {
         console.log('Starting camera...');
         // Request audio with specific constraints for better sensitivity
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: {
             echoCancellation: true,
@@ -47,7 +47,7 @@ const CameraStream = ({ onError, isRecording }) => {
             sampleSize: 16
           }
         });
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
@@ -60,9 +60,10 @@ const CameraStream = ({ onError, isRecording }) => {
         if (onError) onError(err.message || 'Failed to access camera');
       }
     };
-    
+
     startCamera();
-    
+
+    // Only clean up camera when component unmounts, not on every reconnect/disconnect
     return () => {
       console.log('Cleaning up camera resources...');
       if (streamRef.current) {
@@ -70,7 +71,8 @@ const CameraStream = ({ onError, isRecording }) => {
         streamRef.current = null;
       }
     };
-  }, [onError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // <-- Only run on mount/unmount
 
   // Initialize canvas ref if it doesn't exist
   useEffect(() => {
@@ -85,29 +87,29 @@ const CameraStream = ({ onError, isRecording }) => {
       console.warn('Video or stream not initialized');
       return;
     }
-    
+
     if (!canvasRef.current) {
       canvasRef.current = document.createElement('canvas');
     }
-    
+
     try {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      
+
       // Set canvas dimensions to match video
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
-      
+
       // Draw the current video frame to the canvas
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
+
       // Get the image data as base64 string
       const frameData = canvas.toDataURL('image/jpeg', 0.7);
-      
+
       // Log the size of the data being sent
       console.log(`Sending frame data: ${Math.round(frameData.length / 1024)} KB`);
-      
+
       // Send the frame data to the server - IMPORTANT: Don't check isConnected here
       sendVideoFrame(frameData);
     } catch (error) {
@@ -119,10 +121,10 @@ const CameraStream = ({ onError, isRecording }) => {
   useEffect(() => {
     if (isRecording && mediaRecorderRef.current) {
       // Log audio collection status
-      console.log('Audio recording active:', 
+      console.log('Audio recording active:',
         mediaRecorderRef.current.state === 'recording',
         'Chunks:', audioChunksRef.current.length);
-      
+
       // Make sure we're collecting audio data
       if (mediaRecorderRef.current.state !== 'recording') {
         try {
@@ -140,11 +142,11 @@ const CameraStream = ({ onError, isRecording }) => {
     if (!isRecording || !isConnected || audioChunksRef.current.length === 0) {
       return;
     }
-    
+
     try {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
       console.log(`Preparing to send audio: ${(audioBlob.size / 1024).toFixed(2)} KB`);
-      
+
       if (audioBlob.size > 0) {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -167,11 +169,11 @@ const CameraStream = ({ onError, isRecording }) => {
       if (audioIntervalRef.current) {
         clearInterval(audioIntervalRef.current);
       }
-      
+
       audioIntervalRef.current = setInterval(() => {
         sendAudioChunks();
       }, AUDIO_CHUNK_SIZE);
-      
+
       return () => {
         if (audioIntervalRef.current) {
           clearInterval(audioIntervalRef.current);
@@ -185,36 +187,36 @@ const CameraStream = ({ onError, isRecording }) => {
   useEffect(() => {
     if (isRecording) {
       console.log('Starting recording...');
-      
+
       // Start capturing frames at regular intervals
       if (captureIntervalRef.current) {
         clearInterval(captureIntervalRef.current);
       }
-      
+
       captureIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
       }, CAPTURE_INTERVAL);
-      
+
       // Start audio recording if we have a stream
       if (streamRef.current && !mediaRecorderRef.current) {
         try {
           console.log('Setting up audio recording...');
-          
+
           // Get audio track from the stream
           const audioTracks = streamRef.current.getAudioTracks();
           console.log('Audio tracks found:', audioTracks.length);
-          
+
           if (audioTracks.length === 0) {
             console.warn('No audio tracks found in stream');
             return;
           }
-          
+
           // Try to increase audio gain if possible
           try {
             const audioTrack = audioTracks[0];
             const capabilities = audioTrack.getCapabilities();
             console.log('Audio capabilities:', capabilities);
-            
+
             if (capabilities && capabilities.volume) {
               const constraints = { volume: 1.0 }; // Max volume
               audioTrack.applyConstraints({ advanced: [constraints] })
@@ -224,7 +226,7 @@ const CameraStream = ({ onError, isRecording }) => {
           } catch (err) {
             console.warn('Error adjusting audio track settings:', err);
           }
-          
+
           // Try different MIME types
           const mimeTypes = [
             'audio/webm',
@@ -232,29 +234,29 @@ const CameraStream = ({ onError, isRecording }) => {
             'audio/mp4',
             'audio/ogg;codecs=opus'
           ];
-          
+
           let selectedMimeType = null;
-          
+
           for (const mimeType of mimeTypes) {
             if (MediaRecorder.isTypeSupported(mimeType)) {
               selectedMimeType = mimeType;
               break;
             }
           }
-          
+
           if (!selectedMimeType) {
             console.error('No supported MIME type found for MediaRecorder');
             return;
           }
-          
+
           console.log(`Using MIME type: ${selectedMimeType}`);
-          
+
           // Create a new MediaRecorder with higher bitrate for better quality
           const mediaRecorder = new MediaRecorder(streamRef.current, {
             mimeType: selectedMimeType,
             audioBitsPerSecond: 256000  // Increased from 128000
           });
-          
+
           // Set up event handlers
           mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
@@ -262,18 +264,18 @@ const CameraStream = ({ onError, isRecording }) => {
               console.log(`Audio chunk received: ${event.data.size} bytes`);
             }
           };
-          
+
           mediaRecorder.onstop = () => {
             console.log('Media recorder stopped');
           };
-          
+
           // Clear any existing audio chunks
           audioChunksRef.current = [];
-          
+
           // Start recording
           mediaRecorder.start(1000); // Request data every 1 second
           mediaRecorderRef.current = mediaRecorder;
-          
+
         } catch (error) {
           console.error('Error starting recording:', error);
           if (onError) onError('Failed to start audio recording: ' + error.message);
@@ -281,18 +283,18 @@ const CameraStream = ({ onError, isRecording }) => {
       }
     } else {
       console.log('Stopping recording...');
-      
+
       // Stop capturing frames
       if (captureIntervalRef.current) {
         clearInterval(captureIntervalRef.current);
         captureIntervalRef.current = null;
       }
-      
+
       // Stop audio recording
       if (mediaRecorderRef.current) {
         try {
           const mediaRecorder = mediaRecorderRef.current;
-          
+
           if (mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
           }
@@ -302,7 +304,7 @@ const CameraStream = ({ onError, isRecording }) => {
         mediaRecorderRef.current = null;
       }
     }
-    
+
     return () => {
       if (captureIntervalRef.current) {
         clearInterval(captureIntervalRef.current);
@@ -317,13 +319,13 @@ const CameraStream = ({ onError, isRecording }) => {
           Initializing camera...
         </div>
       )}
-      
+
       {cameraError && (
         <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-black bg-opacity-75 p-4 rounded-lg">
           Error: {cameraError}
         </div>
       )}
-      
+
       <video
         ref={videoRef}
         autoPlay
@@ -337,7 +339,7 @@ const CameraStream = ({ onError, isRecording }) => {
           border: 'none',
         }}
       />
-      
+
       {/* Recording indicator */}
       {cameraInitialized && isRecording && (
         <div className="absolute top-2 right-2 flex items-center gap-2">
@@ -345,7 +347,7 @@ const CameraStream = ({ onError, isRecording }) => {
           <span className="text-white text-xs font-medium">Recording</span>
         </div>
       )}
-      
+
       {/* Connection status indicator */}
       {isRecording && !isConnected && (
         <div className="absolute bottom-2 left-2 bg-yellow-600 text-white px-2 py-1 rounded text-xs">
