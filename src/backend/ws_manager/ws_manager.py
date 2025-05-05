@@ -84,8 +84,17 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict):
         """Broadcast a message to all connected clients."""
-        for connection in self.active_connections.values():
-            await connection.send_json(message)
+        disconnected_sessions = []
+        for session_id, connection in self.active_connections.items():
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                logger.error(
+                    f"Error broadcasting to session {session_id}: {e}")
+                disconnected_sessions.append(session_id)
+        # Clean up any connections that failed
+        for session_id in disconnected_sessions:
+            await self.disconnect(session_id)
 
 
 # Create global instance for use throughout the backend
