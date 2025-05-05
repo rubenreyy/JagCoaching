@@ -78,7 +78,7 @@ class WebSocketService {
         // --- END: Improved protocol handling for ngrok ---
 
         // Always ensure /api prefix is added once
-        const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
+        const wsUrl = `${wsBase.replace(/\/$/, '')}/live/ws/${this.sessionId}`;
 
         // Log the WebSocket URL including the port
         try {
