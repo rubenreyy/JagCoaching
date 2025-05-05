@@ -90,7 +90,22 @@ class WebSocketService {
 
         this.ws = new WebSocket(wsUrl);
 
+        // --- ADD: Timeout for WebSocket connection ---
+        let wsTimeout = setTimeout(() => {
+          if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
+            console.warn('WebSocket connection timed out, switching to mock mode');
+            this.mockMode = true;
+            this.sessionId = 'mock-session-' + Date.now();
+            this.ws.close();
+            this.ws = null;
+            this.isConnecting = false;
+            if (onConnect) onConnect();
+            resolve();
+          }
+        }, 3000); // 3 seconds timeout
+
         this.ws.onopen = () => {
+          clearTimeout(wsTimeout);
           console.log('WebSocket connection established');
           this.isConnecting = false;
           this.reconnectAttempts = 1;
@@ -99,9 +114,17 @@ class WebSocketService {
         };
 
         this.ws.onclose = (event) => {
+          clearTimeout(wsTimeout);
           console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
           if (event.code !== 1000) {
-            console.warn('WebSocket closed abnormally. Check backend/ngrok logs for details.');
+            console.warn('WebSocket closed abnormally. Switching to mock mode.');
+            this.mockMode = true;
+            this.sessionId = 'mock-session-' + Date.now();
+            this.ws = null;
+            this.isConnecting = false;
+            if (onConnect) onConnect();
+            resolve();
+            return;
           }
           this.ws = null;
 
@@ -116,9 +139,14 @@ class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
+          clearTimeout(wsTimeout);
           console.error('WebSocket error:', error);
           this.isConnecting = false; // <-- Ensure flag is reset
-          reject(error); // <-- rejects the promise on error
+          this.mockMode = true;
+          this.sessionId = 'mock-session-' + Date.now();
+          this.ws = null;
+          if (onConnect) onConnect();
+          resolve();
         };
 
         this.ws.onmessage = (event) => {
