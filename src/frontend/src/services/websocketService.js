@@ -46,9 +46,9 @@ class WebSocketService {
           console.error('Error starting session:', err);
 
           // If server is unavailable, switch to mock mode
-          if (err.message.includes('Failed to fetch') || 
-              err.message.includes('NetworkError') || 
-              err.message.includes('Failed to start session')) {
+          if (err.message.includes('Failed to fetch') ||
+            err.message.includes('NetworkError') ||
+            err.message.includes('Failed to start session')) {
             console.warn('Server unavailable, switching to mock mode');
             this.mockMode = true;
             this.sessionId = 'mock-session-' + Date.now();
@@ -78,7 +78,7 @@ class WebSocketService {
         // --- END: Improved protocol handling for ngrok ---
 
         // Always ensure /api prefix is added once
-        const wsUrl = `${wsBase.replace(/\/$/, '')}/api/live/ws/${this.sessionId}`;
+        const wsUrl = `${wsBase.replace(/\/$/, '')}/live/ws/${this.sessionId}`;
 
         // Log the WebSocket URL including the port
         try {
