@@ -9,7 +9,7 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.mockMode = false;
-    this.port = 80; // Default port for local development
+    this.port = 8000; // Default port for local development
     // Use IPv4 localhost explicitly
     this.apiBaseUrl = import.meta.env.VITE_API_URL || `https://127.0.0.1:${this.port}`;
   }
