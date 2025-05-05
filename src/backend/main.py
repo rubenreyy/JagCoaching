@@ -63,8 +63,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(users_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(videos_router, prefix="/api")
-# app.include_router(live_router, prefix="/api")
-app.include_router(live_router)
+app.include_router(live_router, prefix="/api")
 app.include_router(presentations, prefix="/api")
 
 # Get allowed origins from environment or use defaults

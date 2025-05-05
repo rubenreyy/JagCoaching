@@ -23,7 +23,7 @@ export const useWebSocket = () => {
 
   const disconnect = useCallback(async () => {
     try {
-      await wsService.disconnect();
+      await wsService.disconnect(); // <-- explicit disconnect
       setIsConnected(false);
       setSessionId(null);
     } catch (err) {
@@ -40,7 +40,7 @@ export const useWebSocket = () => {
       console.warn('WebSocket is not connected, cannot send message');
       return;
     }
-    
+
     try {
       wsService.socket.send(JSON.stringify(message));
       console.log(`Sent message of type: ${message.type}`);
@@ -52,9 +52,9 @@ export const useWebSocket = () => {
   const sendVideoFrame = useCallback(async (frameData) => {
     try {
       console.log(`Sending video frame, data length: ${frameData.length}`);
-      
+
       wsService.sendVideoFrame(frameData);
-      
+
       console.log('Video frame sent successfully');
     } catch (error) {
       console.error('Error sending video frame:', error);
@@ -64,9 +64,9 @@ export const useWebSocket = () => {
   const sendAudioChunk = useCallback(async (audioData) => {
     try {
       console.log(`Sending audio chunk, data length: ${audioData.length}`);
-      
+
       wsService.sendAudioChunk(audioData);
-      
+
       console.log('Audio chunk sent successfully');
     } catch (error) {
       console.error('Error sending audio chunk:', error);
@@ -80,7 +80,7 @@ export const useWebSocket = () => {
     });
 
     return () => {
-      disconnect();
+      disconnect(); // <-- closes socket on component unmount
     };
   }, [disconnect]);
 
@@ -94,4 +94,4 @@ export const useWebSocket = () => {
     sendVideoFrame,
     sendAudioChunk,
   };
-}; 
+};

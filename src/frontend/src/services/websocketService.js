@@ -17,7 +17,7 @@ class WebSocketService {
   async connect(onConnect, onDisconnect) {
     // If already connecting or connected, disconnect first
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
-      await this.disconnect();
+      await this.disconnect(); // <-- closes socket if open
     }
 
     this.isConnecting = true;
@@ -46,6 +46,8 @@ class WebSocketService {
           console.error('Error starting session:', err);
 
           // If server is unavailable, switch to mock mode
+          // This is where protocol upgrade failure is handled on the frontend
+          // Look for logs: 'Server unavailable, switching to mock mode'
           if (err.message.includes('Failed to fetch') ||
             err.message.includes('NetworkError') ||
             err.message.includes('Failed to start session')) {
@@ -96,7 +98,7 @@ class WebSocketService {
             console.warn('WebSocket connection timed out, switching to mock mode');
             this.mockMode = true;
             this.sessionId = 'mock-session-' + Date.now();
-            this.ws.close();
+            this.ws.close(); // <-- closes socket on timeout
             this.ws = null;
             this.isConnecting = false;
             if (onConnect) onConnect();
@@ -141,6 +143,8 @@ class WebSocketService {
         this.ws.onerror = (error) => {
           clearTimeout(wsTimeout);
           console.error('WebSocket error:', error);
+          // If the protocol upgrade fails, this handler is called
+          // Look for logs: 'WebSocket error:'
           this.isConnecting = false; // <-- Ensure flag is reset
           this.mockMode = true;
           this.sessionId = 'mock-session-' + Date.now();
@@ -276,7 +280,7 @@ class WebSocketService {
         this.ws.onerror = null;
         this.ws.onopen = null;
         this.ws.onmessage = null;
-        this.ws.close();
+        this.ws.close(); // <-- closes socket on explicit disconnect
       } catch (e) {
         console.warn('Error during WebSocket disconnect:', e);
       }
