@@ -6,18 +6,23 @@ const Signup = ({ setCurrentPage }) => {
     password: '',
     confirmPassword: ''
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    setIsLoading(true)
+    setError(null)
     
     // First check if passwords match
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
+      setError('Passwords do not match')
+      setIsLoading(false)
+      return
     }
 
     // Call the register API endpoint
-    fetch('http://localhost:8000/api/register/', {
+    fetch('http://localhost:8000/api/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -26,23 +31,29 @@ const Signup = ({ setCurrentPage }) => {
         email: formData.email,
         password: formData.password
       }),
+      credentials: 'include',
+      mode: 'cors'
     })
     .then(async response => {
-      const data = await response.json();
+      const data = await response.json()
       if (!response.ok) {
-        throw new Error(data.detail || 'Registration failed');
+        throw new Error(data.detail || 'Registration failed')
       }
-      return data;
+      return data
     })
     .then(data => {
-      console.log('Registration successful:', data);
-      alert('Account created successfully! Please login.');
-      setCurrentPage('login');
+      console.log('Registration successful:', data)
+      alert('Account created successfully! Please login.')
+      setCurrentPage('login')
     })
     .catch(error => {
-      console.error('Registration error:', error);
-      alert(`Registration failed: ${error.message}`);
-    });
+      console.error('Registration error:', error)
+      setError(error.message)
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
+    
     console.log('Signup attempt:', formData)
   }
 

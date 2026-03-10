@@ -1,15 +1,27 @@
 import os
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status 
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Body  # Added Path and Body
 
 
 from database.cloud_db_controller import CloudDBController
-from dependencies.auth import CloudDBController, get_current_active_user, get_current_user, oauth2_scheme, get_current_active_user
+from dependencies.auth import (
+    CloudDBController, 
+    get_current_active_user, 
+    get_current_user, 
+    oauth2_scheme, 
+    get_current_active_user,
+    get_user_sessions,          #  Phase 4
+    terminate_session,          #  Phase 4
+    verify_password,
+    get_password_hash
+)
 
 from models.user_models import  UserCreate, UserUpdate, UserInDB, UserResponse, User , UserInDB
 from dependencies.auth import get_password_hash
 from dotenv import load_dotenv
+from datetime import datetime
+from bson.objectid import ObjectId
 
 
 
@@ -31,24 +43,46 @@ router = APIRouter(
 
 # Get profile data for the logged in user
 @router.get("/profile/", response_description="Get profile data for the logged in user")
-def get_profile(token: Annotated[str, Depends(get_current_active_user)]):
+def get_profile(current_user: Annotated[dict, Depends(get_current_active_user)]):
     """Returns the profile data for the currently logged in user."""
-    print(token)
-    # decrypts key and gets user
-    user = get_current_active_user(token)
-
     return {
         "status": "success",
         "user": {
-            "username": user["username"],
-            "email": user["email"],
-            "is_active": user["is_active"],
-            # "name": user["name"],
-            # "created_at": user["created_at"],
-            # "last_login": user["last_login"],
-            # "preferences": user.get("preferences", {})
+            "username": current_user["username"],
+            "email": current_user["email"],
+            "is_active": current_user["is_active"],
+            # "name": current_user["name"],
+            # "created_at": current_user["created_at"],
+            # "last_login": current_user["last_login"],
+            # "preferences": current_user.get("preferences", {})
         }
     }
+
+# Phase 4: List all sessions
+@router.get("/sessions", response_description="List all active sessions for the current user")
+async def list_user_sessions(current_user: dict = Depends(get_current_user)):
+    """Returns all active sessions for the current user."""
+    try:
+        user_id = str(current_user["_id"])
+        sessions = get_user_sessions(user_id)
+        return {"status": "success", "sessions": sessions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve sessions: {str(e)}")
+
+# Phase 4: Terminate a session
+@router.delete("/sessions/{session_id}", response_description="Terminate a session")
+async def terminate_user_session(
+    session_id: str = Path(..., description="Session ID to terminate"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Terminates a specific session for the current user."""
+    try:
+        result = terminate_session(session_id)
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Session not found or already terminated.")
+        return {"status": "success", "message": f"Session {session_id} terminated."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to terminate session: {str(e)}")
 
 # @router.get("/profile/{user_id}", response_model=User)
 # async def read_user(user_id: str, db = Depends(get_db)):
@@ -107,3 +141,57 @@ def get_profile(token: Annotated[str, Depends(get_current_active_user)]):
 #         raise HTTPException(status_code=404, detail="User not found")
         
 #     return {"message": "User deleted successfully"}
+
+# Add this endpoint for password change with cascade revocation
+@router.post("/change-password", response_description="Change user password and revoke all tokens")
+async def change_password(
+    current_password: str = Body(...),
+    new_password: str = Body(...),
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        user_id = str(current_user["_id"])
+        
+        # Verify current password
+        if not verify_password(current_password, current_user.get("password", "")):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        
+        # Hash new password
+        hashed_password = get_password_hash(new_password)
+        
+        # Update password in database
+        DB_CONNECTION.update_document(
+            "JagCoaching", 
+            "users", 
+            {"_id": ObjectId(user_id)}, 
+            {"password": hashed_password, "updated_at": datetime.now()}
+        )
+        
+        # Cascade revocation - revoke all refresh tokens
+        tokens_revoked = DB_CONNECTION.revoke_all_user_tokens(
+            "JagCoaching", 
+            user_id, 
+            reason="password_change"
+        )
+        
+        return {
+            "status": "success", 
+            "message": "Password changed successfully. All sessions have been terminated.",
+            "tokens_revoked": tokens_revoked
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to change password: {str(e)}")
+
+# Add this endpoint for session analytics
+@router.get("/sessions/analytics", response_description="Get detailed session analytics")
+async def get_session_analytics(current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = str(current_user["_id"])
+        analytics = DB_CONNECTION.get_user_session_analytics("JagCoaching", user_id)
+        
+        return {
+            "status": "success",
+            "analytics": analytics
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve session analytics: {str(e)}")

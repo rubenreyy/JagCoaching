@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { User, LogOut, Trash2 } from "lucide-react"
 
 const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
@@ -14,18 +14,24 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
   const [error, setError] = useState(null)
   const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'))
 
-
   // Fetch user profile data when component mounts
-  useState(() => {
+  useEffect(() => {
     const fetchProfile = async () => {
       try {
         setIsLoading(true)
+        // Get the token from localStorage
+        const token = localStorage.getItem('accessToken')
+        
+        if (!token) {
+          throw new Error('No authentication token found')
+        }
+        
         const response = await fetch('http://localhost:8000/api/users/profile/', {
           method: 'GET',
           mode: 'cors',
           credentials: 'include',
           headers: {
-            // 'Authorization': "Bearer " + accessToken,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
         })
@@ -38,7 +44,7 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
         if (data.status === 'success') {
           setFormData({
             ...formData,
-            name: data.user.name || "User",
+            name: data.user.name || data.user.username || "User",
             email: data.user.email || ""
           })
         }
@@ -54,7 +60,7 @@ const AccountPage = ({ setCurrentPage, setIsLoggedIn }) => {
     }
     
     fetchProfile()
-  }, [])
+  }, []) // Make sure to include the dependencies array
 
   const handleLogout = () => {
     setIsLoggedIn(false)

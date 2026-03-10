@@ -9,9 +9,10 @@ import ProgressPage from './components/progress/ProgressPage'
 import Login from './components/auth/Login'
 import Signup from './components/auth/Signup'
 import AccountPage from './components/account/AccountPage'
+import { LiveSessionProvider } from './contexts/LiveSessionContext'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard')
+  const [currentPage, setCurrentPage] = useState('login')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [accessToken, setAccessToken] = useState(null)
   const [feedbackData, setFeedbackData] = useState(null)
@@ -23,30 +24,42 @@ function App() {
   };  
 
   return (
-    <div className="min-h-screen bg-[#EEEEEE]">
-      <Navbar 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage}
-        isLoggedIn={isLoggedIn}
-        setIsLoggedIn={setIsLoggedIn}
-        accessToken={accessToken}
-        setAccessToken={setAccessToken}
-      />
-      {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} />}
-      {currentPage === 'upload' && (
-        <Upload 
-          setCurrentPage={setCurrentPage} 
-          setFeedbackData={setFeedbackData} 
+    <LiveSessionProvider>
+      <div className="min-h-screen bg-[#EEEEEE]">
+        <Navbar 
+          currentPage={currentPage} 
+          setCurrentPage={setCurrentPage}
+          isLoggedIn={isLoggedIn}
+          setIsLoggedIn={setIsLoggedIn}
+          accessToken={accessToken}
+          setAccessToken={setAccessToken}
         />
-      )}
-      {currentPage === 'schedule' && <Schedule />}
-      {currentPage === 'feedback' && <Feedback feedbackData={feedbackData} />}
-      {currentPage === 'progress' && <ProgressPage setCurrentPage={setCurrentPage} />}
-      {currentPage === 'login' && <Login setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
-      {currentPage === 'signup' && <Signup setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
-      {currentPage === 'account' && <AccountPage setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
-      {currentPage === 'live' && <LiveAnalysis />}
+        {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} />}
+        {currentPage === 'upload' && (
+          <Upload 
+            setCurrentPage={setCurrentPage} 
+            setFeedbackData={setFeedbackData} 
+          />
+        )}
+        {currentPage === 'schedule' && <Schedule />}
+        {currentPage === 'feedback' && (
+          <Feedback 
+            feedbackData={feedbackData} 
+            setCurrentPage={setCurrentPage}
+          />
+        )}
+        {currentPage === 'progress' && (
+          <ProgressPage 
+            setCurrentPage={setCurrentPage} 
+            setFeedbackData={setFeedbackData} 
+          />
+        )}
+        {currentPage === 'login' && <Login setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
+        {currentPage === 'signup' && <Signup setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
+        {currentPage === 'account' && <AccountPage setCurrentPage={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />}
+        {currentPage === 'live' && <LiveAnalysis />}
       </div>
+    </LiveSessionProvider>
   )
 }
 

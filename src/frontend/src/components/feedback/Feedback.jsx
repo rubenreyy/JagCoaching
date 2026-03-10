@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { Progress } from '../ui/Progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Download } from 'lucide-react'
+import { Download, FileText, Video } from 'lucide-react'
 
 const FeedbackChart = ({ data, title, suggestions, details }) => {
   return (
@@ -119,48 +119,256 @@ const LanguageAnalysis = ({ feedbackData }) => (
   </div>
 );
 
-const Feedback = ({ feedbackData }) => {
+// New component for PowerPoint feedback
+const PresentationAnalysis = ({ feedbackData }) => (
+  <div className="space-y-6">
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Slide Content Clarity</h3>
+      <p className="text-gray-800 mb-4">{feedbackData.slide_clarity}</p>
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="bg-primary h-2.5 rounded-full" style={{ width: '85%' }}></div>
+      </div>
+    </div>
+    
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Visual Design Quality</h3>
+      <p className="text-gray-800 mb-4">{feedbackData.visual_quality}</p>
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="bg-primary h-2.5 rounded-full" style={{ width: '75%' }}></div>
+      </div>
+    </div>
+    
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Key Topics & Themes</h3>
+      <p className="text-gray-800">{feedbackData.key_topics}</p>
+    </div>
+    
+    <div className="p-6 bg-white rounded-lg shadow-sm border-l-4 border-primary">
+      <h3 className="text-xl font-semibold mb-2">Improvement Suggestion</h3>
+      <p className="text-gray-800">{feedbackData.overall_suggestion}</p>
+    </div>
+  </div>
+);
+
+const Feedback = ({ feedbackData, setCurrentPage }) => {
   const [performanceData, setPerformanceData] = useState([])
   const [languageData, setLanguageData] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [feedbackType, setFeedbackType] = useState('video') // 'video' or 'presentation'
 
   useEffect(() => {
+    // If feedbackData is provided directly, use it
     if (feedbackData) {
-      console.log("Processing feedback data:", feedbackData)
-      
-      // Process audio/performance data with null checks
-      setPerformanceData([
-        { 
-          name: "Speech Rate", 
-          score: feedbackData.speech_rate?.wpm || 0 
-        },
-        { 
-          name: "Clarity", 
-          score: feedbackData.clarity?.score || 0 
-        },
-        { 
-          name: "Filler Words", 
-          score: 100 - ((feedbackData.filler_words?.total || 0) * 10) 
-        }
-      ])
-
-      // Process language data with null checks
-      setLanguageData([
-        { 
-          name: "Sentiment", 
-          score: Math.round((feedbackData.sentiment?.score || 0) * 100) 
-        },
-        { 
-          name: "Topic Coverage", 
-          score: (feedbackData.keywords?.topics?.length || 0) * 20 
-        }
-      ])
+      // Check if this is presentation feedback
+      if (feedbackData.feedback_type === 'presentation') {
+        setFeedbackType('presentation')
+      } else {
+        setFeedbackType('video')
+        processFeedbackData(feedbackData)
+      }
+      return
+    }
+    
+    // Otherwise, check if we need to load a specific presentation
+    const presentationId = localStorage.getItem("currentPresentationId")
+    if (presentationId) {
+      fetchPresentationData(presentationId)
     }
   }, [feedbackData])
-
-  if (!feedbackData) {
-    return <div>Loading feedback data...</div>
+  
+  const fetchPresentationData = async (presentationId) => {
+    try {
+      setIsLoading(true)
+      const accessToken = localStorage.getItem("accessToken")
+      
+      if (!accessToken) {
+        setError("You must be logged in to view feedback")
+        setIsLoading(false)
+        return
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/videos/presentations/${presentationId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch presentation data')
+      }
+      
+      const data = await response.json()
+      console.log("Fetched presentation:", data)
+      
+      // Process the feedback data
+      processFeedbackData(data.feedback_data)
+      
+    } catch (err) {
+      console.error("Error fetching presentation:", err)
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  const processFeedbackData = (data) => {
+    console.log("Processing feedback data:", data)
+    
+    // Process audio/performance data with null checks
+    setPerformanceData([
+      { 
+        name: "Speech Rate", 
+        score: data.speech_rate?.wpm || 0 
+      },
+      { 
+        name: "Clarity", 
+        score: data.clarity?.score || 0 
+      },
+      { 
+        name: "Pauses", 
+        score: data.pauses?.count || 0 
+      },
+      { 
+        name: "Filler Words", 
+        score: data.filler_words?.total || 0 
+      }
+    ])
+    
+    // Process language data
+    setLanguageData([
+      { 
+        name: "Sentiment", 
+        score: data.sentiment?.score ? data.sentiment.score * 100 : 0 
+      },
+      { 
+        name: "Grammar", 
+        score: data.grammar?.score || 0 
+      },
+      { 
+        name: "Vocabulary", 
+        score: data.vocabulary?.score || 0 
+      },
+      { 
+        name: "Engagement", 
+        score: data.engagement?.score || 0 
+      }
+    ])
+  }
+  
+  // Navigation handler function
+  const navigateTo = (page) => {
+    console.log(`Navigating to ${page} page`);
+    if (typeof setCurrentPage === 'function') {
+      setCurrentPage(page);
+    } else {
+      console.error("setCurrentPage is not available, using direct navigation");
+      // Fallback to direct URL navigation
+      window.location.href = `/${page}`;
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-lg font-mono">Loading feedback data...</p>
+      </div>
+    )
+  }
+  
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen gap-4">
+        <p className="text-lg font-mono text-red-500">{error}</p>
+        <button 
+          onClick={() => navigateTo("upload")}
+          className="px-6 py-2 bg-black text-white rounded-full font-mono"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
+  
+  // If no data is available, show a more helpful message with guidance
+  if ((!feedbackData && performanceData.length === 0) || 
+      (feedbackType === 'presentation' && !feedbackData)) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen gap-6 max-w-md mx-auto text-center px-4">
+        <div className="bg-gray-100 p-8 rounded-lg shadow-sm w-full">
+          <h2 className="text-2xl font-bold font-mono mb-4">No Feedback Data Available</h2>
+          
+          <p className="font-mono text-[#030303] mb-6">
+            To get personalized feedback on your presentation skills:
+          </p>
+          
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-md border border-gray-200">
+              <h3 className="font-semibold mb-2">Upload a Presentation</h3>
+              <p className="text-gray-700 mb-3">Record or upload a video of your presentation for AI analysis.</p>
+              <button 
+                onClick={() => navigateTo("upload")}
+                className="px-4 py-2 bg-primary text-white rounded-md font-mono 
+                  hover:bg-blue-700 hover:shadow-md transform hover:-translate-y-0.5 
+                  transition-all duration-200 ease-in-out w-full"
+              >
+                Go to Upload Page
+              </button>
+            </div>
+            
+            <div className="bg-white p-4 rounded-md border border-gray-200">
+              <h3 className="font-semibold mb-2">View Past Presentations</h3>
+              <p className="text-gray-700 mb-3">Check your progress and review feedback from previous presentations.</p>
+              <button 
+                onClick={() => navigateTo("progress")}
+                className="px-4 py-2 bg-black text-white rounded-md font-mono 
+                  hover:bg-gray-800 hover:shadow-md transform hover:-translate-y-0.5 
+                  transition-all duration-200 ease-in-out w-full"
+              >
+                Go to Progress Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
+  // PowerPoint presentation feedback display
+  if (feedbackType === 'presentation') {
+    return (
+      <div className="max-w-[1280px] mx-auto px-4 py-8">
+        {/* Presentation Summary Card */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>PowerPoint Analysis</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">Analyzed on {new Date().toLocaleDateString()}</p>
+            </div>
+            <FileText className="h-10 w-10 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center mb-6">
+              <div className="text-4xl font-bold font-mono text-primary mr-4">
+                Summary
+              </div>
+            </div>
+            <p className="font-mono text-[#030303] mb-4">
+              {feedbackData.overall_suggestion}
+            </p>
+            <button className="px-6 py-2 bg-black text-white rounded-full font-mono font-semibold hover:bg-primary transition-colors flex items-center">
+              <Download className="mr-2 h-4 w-4" /> Download Analysis
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* PowerPoint Analysis Content */}
+        <PresentationAnalysis feedbackData={feedbackData} />
+      </div>
+    )
+  }
+
+  // Video feedback display (existing code)
   // Format filler words for display
   const fillerWordsList = Object.entries(feedbackData.filler_words?.counts || {})
     .map(([word, count]) => `"${word}": ${count} times`)
@@ -169,14 +377,15 @@ const Feedback = ({ feedbackData }) => {
     <div className="max-w-[1280px] mx-auto px-4 py-8">
       {/* Presentation Summary Card */}
       <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Presentation Summary</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Video Presentation Analysis</CardTitle>
+            <p className="text-sm text-gray-500 mt-1">Analyzed on {new Date().toLocaleDateString()}</p>
+          </div>
+          <Video className="h-10 w-10 text-primary" />
         </CardHeader>
         <CardContent>
           <h2 className="text-2xl font-bold font-mono mb-2">Speech Analysis Results</h2>
-          <p className="font-mono text-[#8E8E8E] mb-4">
-            Analyzed on {new Date().toLocaleDateString()}
-          </p>
           <div className="flex items-center mb-4">
             <div className="text-4xl font-bold font-mono text-primary mr-4">
               {Math.round(feedbackData.clarity?.score || 0)}%
@@ -189,7 +398,7 @@ const Feedback = ({ feedbackData }) => {
         </CardContent>
       </Card>
 
-      {/* Feedback Tabs */}
+      {/* Feedback Tabs - Only for video feedback */}
       <Tabs defaultValue="audio" className="mb-8">
         <TabsList>
           <TabsTrigger value="audio">Audio</TabsTrigger>
