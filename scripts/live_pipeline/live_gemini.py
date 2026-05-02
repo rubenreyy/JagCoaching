@@ -74,27 +74,27 @@ def get_gemini_feedback(emotion, eye_contact, posture, transcript):
         }
     
     prompt = f"""
-You are an expert speech coach providing BRIEF, CONCISE feedback. Keep each feedback point to 1-2 short sentences maximum.
+                You are an expert speech coach providing BRIEF, CONCISE feedback. Keep each feedback point to 1-2 short sentences maximum.
 
-Analyze this 10-second segment:
-- Facial emotion: {emotion}
-- Eye contact: {eye_contact}
-- Posture: {posture}
-- Speech: "{transcript}"
+                Analyze this 10-second segment:
+                - Facial emotion: {emotion}
+                - Eye contact: {eye_contact}
+                - Posture: {posture}
+                - Speech: "{transcript}"
 
-Be direct and actionable. For posture, assume the speaker is standing and suggest "Stand with shoulders back, spine straight."
+                Be direct and actionable. For posture, assume the speaker is standing and suggest "Stand with shoulders back, spine straight."
 
-Provide your feedback in JSON format with the following structure:
-{{
-  "posture_feedback": "Very brief feedback about posture (max 15 words)",
-  "expression_feedback": "Very brief feedback about facial expressions (max 15 words)",
-  "eye_contact_feedback": "Very brief feedback about eye contact (max 15 words)",
-  "voice_feedback": "Very brief feedback about voice (max 15 words)",
-  "overall_suggestion": "One concise improvement tip (max 20 words)"
-}}
+                Provide your feedback in JSON format with the following structure:
+                {{
+                "posture_feedback": "Very brief feedback about posture (max 15 words)",
+                "expression_feedback": "Very brief feedback about facial expressions (max 15 words)",
+                "eye_contact_feedback": "Very brief feedback about eye contact (max 15 words)",
+                "voice_feedback": "Very brief feedback about voice (max 15 words)",
+                "overall_suggestion": "One concise improvement tip (max 20 words)"
+                }}
 
-Remember: Be extremely concise. No explanations needed.
-"""
+                Remember: Be extremely concise. No explanations needed.
+                """
     
     try:
         logger.info("[GEMINI] Sending request to Gemini API...")

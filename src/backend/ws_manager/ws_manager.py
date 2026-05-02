@@ -62,25 +62,30 @@ class WebSocketManager:
         self.session_data: Dict[str, Dict] = {}
     
     async def connect(self, session_id: str, websocket: WebSocket):
+        """ Connect a new client and initialize session data if needed"""
         self.active_connections[session_id] = websocket
         # Initialize session data if not exists
         if session_id not in self.session_data:
             self.session_data[session_id] = {}
     
     async def disconnect(self, session_id: str):
+        """ Disconnect a client and clean up session data if needed"""
         if session_id in self.active_connections:
             del self.active_connections[session_id]
         # Keep session data for potential retrieval after disconnect
     
     def get_session_data(self, session_id: str) -> Dict:
+        """ Get session data, returning empty dict if session_id not found"""
         return self.session_data.get(session_id, {})
     
     def update_session_data(self, session_id: str, data: Dict):
+        """ Update session data with new values, creating entry if session_id not found"""
         if session_id in self.session_data:
             self.session_data[session_id].update(data)
         else:
             self.session_data[session_id] = data
     
     async def send_message(self, session_id: str, message: Dict):
+        """ Send a message to a specific client if connected"""
         if session_id in self.active_connections:
             await self.active_connections[session_id].send_json(message) 
